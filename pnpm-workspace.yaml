@@ -5,7 +5,7 @@ onlyBuiltDependencies:
   - prisma
   - workerd
 
-networkTimeout: 600000
+fetchTimeout: 600000
 networkConcurrency: 4
 fetchRetries: 8
 allowBuilds:
