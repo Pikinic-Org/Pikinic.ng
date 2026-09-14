@@ -1,3 +1,7 @@
+# Pikinic
+
+Marketing site and admin dashboard for Pikinic — travel packages, flight offers, blog, and webinars, backed by Postgres/Prisma with Zoho CRM/Campaigns integration.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
