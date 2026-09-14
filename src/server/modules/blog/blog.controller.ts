@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import * as blogService from "@/server/modules/blog/blog.service";
 
@@ -48,8 +48,7 @@ export async function create(request: Request) {
     return ok(post, 201);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Create blog post error:", error);
-    return fail("Could not create blog post.", 500);
+    return failFromError(error, "Could not create blog post.");
   }
 }
 
@@ -74,8 +73,7 @@ export async function update(request: Request, { params }: { params: Promise<{ s
     return ok(post);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Update blog post error:", error);
-    return fail("Could not update blog post.", 500);
+    return failFromError(error, "Could not update blog post.");
   }
 }
 
@@ -88,7 +86,6 @@ export async function remove(_request: Request, { params }: { params: Promise<{ 
     await blogService.deleteBlogPost(slug);
     return ok({ ok: true });
   } catch (error) {
-    console.error("Delete blog post error:", error);
-    return fail("Could not delete blog post.", 500);
+    return failFromError(error, "Could not delete blog post.");
   }
 }

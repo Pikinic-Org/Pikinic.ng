@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import * as flightsService from "@/server/modules/flights/flights.service";
 
@@ -36,8 +36,7 @@ export async function create(request: Request) {
     return ok(offer, 201);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Create flight offer error:", error);
-    return fail("Could not create flight offer.", 500);
+    return failFromError(error, "Could not create flight offer.");
   }
 }
 
@@ -62,8 +61,7 @@ export async function update(request: Request, { params }: { params: Promise<{ i
     return ok(offer);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Update flight offer error:", error);
-    return fail("Could not update flight offer.", 500);
+    return failFromError(error, "Could not update flight offer.");
   }
 }
 
@@ -76,7 +74,6 @@ export async function remove(_request: Request, { params }: { params: Promise<{ 
     await flightsService.deleteFlightOffer(id);
     return ok({ ok: true });
   } catch (error) {
-    console.error("Delete flight offer error:", error);
-    return fail("Could not delete flight offer.", 500);
+    return failFromError(error, "Could not delete flight offer.");
   }
 }

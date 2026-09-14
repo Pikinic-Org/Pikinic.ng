@@ -1,10 +1,21 @@
 import { NextResponse } from "next/server";
 import { getZohoCampaignsAccessToken, getZohoCrmAccessToken } from "@/lib/zoho";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { isValidEmail } from "@/lib/validation";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-\s()]+$/;
 
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+
 export async function POST(request: Request) {
+  if (isRateLimited(`contact:${getClientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   let body: {
     name?: string;
     email?: string;
@@ -23,7 +34,7 @@ export async function POST(request: Request) {
   if (!name || !email || !whatsapp || !service || !message) {
     return NextResponse.json({ error: "All fields are required." }, { status: 400 });
   }
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
   if (!PHONE_PATTERN.test(whatsapp) || whatsapp.replace(/\D/g, "").length < 7) {

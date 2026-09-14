@@ -1,7 +1,19 @@
 import { NextResponse } from "next/server";
 import { getZohoCampaignsAccessToken } from "@/lib/zoho";
+import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { isValidEmail } from "@/lib/validation";
+
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(request: Request) {
+  if (isRateLimited(`newsletter:${getClientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: "Too many submissions. Please try again later." },
+      { status: 429 }
+    );
+  }
+
   let body: { email?: string };
 
   try {
@@ -13,6 +25,9 @@ export async function POST(request: Request) {
   const { email } = body;
   if (!email) {
     return NextResponse.json({ error: "Email is required." }, { status: 400 });
+  }
+  if (!isValidEmail(email)) {
+    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
   const listKey = process.env.ZOHO_CAMPAIGNS_LIST_KEY_NEWSLETTER;

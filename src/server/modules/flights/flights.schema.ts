@@ -8,7 +8,7 @@ export const flightOfferInputSchema = z.object({
   price: z.number().positive(),
   tripType: z.string().min(1),
   stops: z.number().int().min(0),
-  imageUrl: z.string().optional(),
+  imageUrl: z.url().optional(),
 });
 
 export const flightOfferUpdateSchema = flightOfferInputSchema.partial();

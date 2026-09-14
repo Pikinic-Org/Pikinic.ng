@@ -1,6 +1,15 @@
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import * as mediaService from "@/server/modules/media/media.service";
+
+const ALLOWED_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/avif",
+]);
+const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 
 export async function list() {
   const session = await requireAdminSession();
@@ -23,6 +32,13 @@ export async function upload(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file");
     if (!(file instanceof File)) return fail("A file is required.", 400);
+    if (file.size === 0) return fail("The file is empty.", 400);
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return fail(`Image must be ${MAX_FILE_SIZE_BYTES / (1024 * 1024)}MB or smaller.`, 400);
+    }
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return fail("Unsupported file type. Upload a JPEG, PNG, WebP, GIF, or AVIF image.", 400);
+    }
 
     const item = await mediaService.createMediaItem(file);
     return ok(item, 201);
@@ -41,7 +57,6 @@ export async function remove(_request: Request, { params }: { params: Promise<{ 
     await mediaService.deleteMediaItem(id);
     return ok({ ok: true });
   } catch (error) {
-    console.error("Delete media item error:", error);
-    return fail("Could not delete media item.", 500);
+    return failFromError(error, "Could not delete media item.");
   }
 }

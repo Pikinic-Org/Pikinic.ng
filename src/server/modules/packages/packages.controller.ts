@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import * as packagesService from "@/server/modules/packages/packages.service";
 
@@ -48,8 +48,7 @@ export async function create(request: Request) {
     return ok(pkg, 201);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Create package error:", error);
-    return fail("Could not create package.", 500);
+    return failFromError(error, "Could not create package.");
   }
 }
 
@@ -74,8 +73,7 @@ export async function update(request: Request, { params }: { params: Promise<{ s
     return ok(pkg);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Update package error:", error);
-    return fail("Could not update package.", 500);
+    return failFromError(error, "Could not update package.");
   }
 }
 
@@ -88,7 +86,6 @@ export async function remove(_request: Request, { params }: { params: Promise<{ 
     await packagesService.deletePackage(slug);
     return ok({ ok: true });
   } catch (error) {
-    console.error("Delete package error:", error);
-    return fail("Could not delete package.", 500);
+    return failFromError(error, "Could not delete package.");
   }
 }

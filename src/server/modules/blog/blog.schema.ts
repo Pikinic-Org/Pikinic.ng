@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { slugSchema } from "@/server/modules/shared/schema";
 
 export const blogCategorySchema = z.enum([
   "Travel Tips",
@@ -18,14 +19,14 @@ const textBlockSchema = z.object({
 const imageBlockSchema = z.object({
   id: z.string().min(1),
   type: z.literal("image"),
-  url: z.string().min(1),
+  url: z.url(),
   caption: z.string().optional(),
 });
 
 export const blogContentBlockSchema = z.union([textBlockSchema, imageBlockSchema]);
 
 export const blogPostInputSchema = z.object({
-  slug: z.string().min(1),
+  slug: slugSchema,
   title: z.string().min(1),
   excerpt: z.string().min(1),
   category: blogCategorySchema,
@@ -33,7 +34,7 @@ export const blogPostInputSchema = z.object({
   publishedAt: z.string().min(1),
   readTime: z.string().min(1),
   content: z.array(blogContentBlockSchema),
-  imageUrl: z.string(),
+  imageUrl: z.url(),
   status: blogPostStatusSchema,
 });
 

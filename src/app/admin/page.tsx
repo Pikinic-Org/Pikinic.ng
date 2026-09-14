@@ -31,16 +31,16 @@ export default function AdminOverviewPage() {
   } | null>(null);
 
   useEffect(() => {
-    Promise.all([listBlogPosts(), listFlightOffers(), listPackages(), listWebinars()])
-      .then(([blogPosts, flightOffers, packages, webinars]) => {
+    Promise.allSettled([listBlogPosts(), listFlightOffers(), listPackages(), listWebinars()]).then(
+      ([blogPosts, flightOffers, packages, webinars]) => {
         setCounts({
-          blogPosts: blogPosts.length,
-          flightOffers: flightOffers.length,
-          packages: packages.length,
-          webinars: webinars.length,
+          blogPosts: blogPosts.status === "fulfilled" ? blogPosts.value.length : 0,
+          flightOffers: flightOffers.status === "fulfilled" ? flightOffers.value.length : 0,
+          packages: packages.status === "fulfilled" ? packages.value.length : 0,
+          webinars: webinars.status === "fulfilled" ? webinars.value.length : 0,
         });
-      })
-      .catch(() => setCounts({ blogPosts: 0, flightOffers: 0, packages: 0, webinars: 0 }));
+      }
+    );
   }, []);
 
   return (

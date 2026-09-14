@@ -26,6 +26,7 @@ export async function uploadImage(buffer: Buffer, folder = "pikinic-admin"): Pro
   const base64 = buffer.toString("base64");
   const result = await cloudinary.uploader.upload(`data:application/octet-stream;base64,${base64}`, {
     folder,
+    resource_type: "image",
   });
   return {
     url: result.secure_url,

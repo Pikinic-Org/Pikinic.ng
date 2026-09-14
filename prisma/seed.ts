@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { PrismaClient, type Prisma } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
+import { seedAdminUser } from "./lib/seed-admin-user";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
@@ -12,22 +12,6 @@ function p(text: string) {
 }
 function h2(text: string) {
   return { id: `seed-${blockId++}`, type: "h2" as const, text };
-}
-
-async function seedAdminUser() {
-  const email = process.env.SEED_ADMIN_EMAIL;
-  const password = process.env.SEED_ADMIN_PASSWORD;
-  if (!email || !password) {
-    console.warn("SEED_ADMIN_EMAIL / SEED_ADMIN_PASSWORD not set — skipping admin user seed.");
-    return;
-  }
-  const passwordHash = await bcrypt.hash(password, 10);
-  await prisma.adminUser.upsert({
-    where: { email },
-    update: { passwordHash },
-    create: { email, passwordHash, name: "Pikinic Admin" },
-  });
-  console.log(`Seeded admin user: ${email}`);
 }
 
 async function seedBlogPosts() {
@@ -287,7 +271,7 @@ async function seedWebinars() {
 }
 
 async function main() {
-  await seedAdminUser();
+  await seedAdminUser(prisma);
   await seedBlogPosts();
   await seedFlightOffers();
   await seedPackages();

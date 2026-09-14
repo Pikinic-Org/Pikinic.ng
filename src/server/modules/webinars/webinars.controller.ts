@@ -1,5 +1,5 @@
 import { ZodError } from "zod";
-import { ok, fail } from "@/lib/api-response";
+import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import * as webinarsService from "@/server/modules/webinars/webinars.service";
 
@@ -48,8 +48,7 @@ export async function create(request: Request) {
     return ok(webinar, 201);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Create webinar error:", error);
-    return fail("Could not create webinar.", 500);
+    return failFromError(error, "Could not create webinar.");
   }
 }
 
@@ -74,8 +73,7 @@ export async function update(request: Request, { params }: { params: Promise<{ s
     return ok(webinar);
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid input.", 400);
-    console.error("Update webinar error:", error);
-    return fail("Could not update webinar.", 500);
+    return failFromError(error, "Could not update webinar.");
   }
 }
 
@@ -88,7 +86,6 @@ export async function remove(_request: Request, { params }: { params: Promise<{ 
     await webinarsService.deleteWebinar(slug);
     return ok({ ok: true });
   } catch (error) {
-    console.error("Delete webinar error:", error);
-    return fail("Could not delete webinar.", 500);
+    return failFromError(error, "Could not delete webinar.");
   }
 }

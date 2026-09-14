@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { slugSchema } from "@/server/modules/shared/schema";
 
 export const packageCategorySchema = z.enum([
   "Domestic",
@@ -16,7 +17,7 @@ const itineraryDaySchema = z.object({
 });
 
 export const travelPackageInputSchema = z.object({
-  slug: z.string().min(1),
+  slug: slugSchema,
   destination: z.string().min(1),
   country: z.string().min(1),
   name: z.string().min(1),
@@ -30,7 +31,7 @@ export const travelPackageInputSchema = z.object({
   included: z.array(z.string()),
   excluded: z.array(z.string()),
   itinerary: z.array(itineraryDaySchema).optional(),
-  imageUrls: z.array(z.string()),
+  imageUrls: z.array(z.url()),
 });
 
 export const travelPackageUpdateSchema = travelPackageInputSchema.partial().omit({ slug: true });
