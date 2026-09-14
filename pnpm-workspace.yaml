@@ -11,4 +11,7 @@ fetchRetries: 8
 allowBuilds:
   '@prisma/engines': true
   esbuild: true
+  msgpackr-extract: true
   prisma: true
+  workerd: true
+  unrs-resolver: true
