@@ -8,6 +8,7 @@ import { AdminSelect, AdminTextInput, ImagePickerField, type FieldState } from "
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import { createBlogPost, updateBlogPost } from "@/lib/admin/api/blog";
 import { slugify } from "@/lib/admin/utils/slugify";
+import { parsePastedContent } from "@/lib/admin/utils/parse-pasted-content";
 import { formatAdminDate } from "@/lib/admin/utils/format";
 import type { BlogCategory, BlogContentBlock, BlogPost, BlogPostStatus } from "@/lib/admin/types";
 
@@ -42,6 +43,8 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
   const [contentError, setContentError] = useState("");
   const [imagePickerForBlock, setImagePickerForBlock] = useState<string | null>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
+  const [pasteBoxOpen, setPasteBoxOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
@@ -90,6 +93,15 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
 
   function removeBlock(id: string) {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
+  }
+
+  function addPastedBlocks() {
+    const parsed = parsePastedContent(pasteText);
+    if (parsed.length === 0) return;
+    setBlocks((prev) => [...prev, ...parsed]);
+    setPasteText("");
+    setPasteBoxOpen(false);
+    setContentError("");
   }
 
   function moveBlock(id: string, direction: "up" | "down") {
@@ -187,7 +199,48 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
                   {type === "paragraph" ? "Paragraph" : type.toUpperCase()}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setPasteBoxOpen((prev) => !prev)}
+                className={`flex items-center gap-1.5 rounded-[2px] border border-border-primary px-3 py-2 text-xs font-semibold uppercase tracking-widest transition-colors ${
+                  pasteBoxOpen ? "bg-green-200 text-green-900" : "text-text-primary hover:bg-neutral-900/[0.04]"
+                }`}
+              >
+                <AdminIcon icon="blog" className="h-3.5 w-3.5" />
+                Paste Text
+              </button>
             </div>
+
+            {pasteBoxOpen && (
+              <div className="mb-4 rounded-[2px] border border-border-primary p-4">
+                <textarea
+                  autoFocus
+                  placeholder={
+                    "Paste a full draft here — blank lines split it into separate paragraphs.\n\nStart a line with #, ##, or ### to make it a heading instead of a paragraph."
+                  }
+                  rows={8}
+                  value={pasteText}
+                  onChange={(e) => setPasteText(e.target.value)}
+                  className="w-full rounded-[2px] border border-border-primary bg-surface-primary px-3 py-2 text-sm leading-relaxed text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+                />
+                <div className="mt-3 flex gap-2">
+                  <Button type="button" size="md" onClick={addPastedBlocks} disabled={!pasteText.trim()}>
+                    Add as Blocks
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="md"
+                    onClick={() => {
+                      setPasteBoxOpen(false);
+                      setPasteText("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {blocks.length === 0 ? (
               <div className="rounded-[2px] border border-dashed border-border-primary p-12 text-center text-sm text-text-tertiary">
