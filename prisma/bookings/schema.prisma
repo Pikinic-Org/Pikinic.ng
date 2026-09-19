@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../../src/generated/prisma-bookings"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// One row, keyed by a fixed id, caching the SkyLink JWT so concurrent
+// serverless invocations share a token instead of each re-logging in
+// (SkyLink's /api/login is rate-limited to 10/minute per IP).
+model SkylinkSession {
+  id           String   @id @default("singleton")
+  accessToken  String
+  refreshToken String
+  expiresAt    DateTime
+  updatedAt    DateTime @updatedAt
+}
+
+model MonnifySession {
+  id          String   @id @default("singleton")
+  accessToken String
+  expiresAt   DateTime
+  updatedAt   DateTime @updatedAt
+}
+
+enum FlightBookingStatus {
+  pending_payment
+  paid
+  reserved
+  failed
+}
+
+model FlightBooking {
+  id            String              @id @default(cuid())
+  status        FlightBookingStatus @default(pending_payment)
+
+  // Route/search context, kept for display without re-calling SkyLink
+  tripType      String
+  fromCode      String
+  toCode        String
+  departureDate DateTime
+  returnDate    DateTime?
+
+  // SkyLink reservation result (populated once /reserve succeeds)
+  pnr               String?
+  bookingReference  String?
+  carrier           String?
+  ticketDeadline    DateTime?
+
+  // Passenger + pricing detail
+  passengers Json
+  travellers Json
+  price      Int
+  currency   String
+
+  // Payment gate — /reserve must never fire before paymentStatus = paid
+  paymentReference String?
+  paymentStatus    String  @default("pending")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
