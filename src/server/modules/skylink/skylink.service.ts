@@ -1,6 +1,6 @@
 import { requireEnv } from "@/lib/env";
 import { prismaBookings } from "@/lib/db-bookings";
-import { getAccessToken } from "@/server/modules/skylink/skylink.client";
+import { getAccessToken, readSkylinkJson } from "@/server/modules/skylink/skylink.client";
 import { findActiveDealForRoute } from "@/server/modules/deals/deals.service";
 import {
   flightPricingInputSchema,
@@ -30,7 +30,7 @@ export const searchFlights = async (input: unknown) => {
     body: JSON.stringify(data),
   });
 
-  const body = await response.json();
+  const body = await readSkylinkJson(response);
 
   if (!response.ok || !body.success) {
     throw new Error(body.message ?? "SkyLink flight search failed");
@@ -83,7 +83,7 @@ export const priceFlight = async (input: unknown) => {
     body: JSON.stringify(data),
   });
 
-  const body = await response.json();
+  const body = await readSkylinkJson(response);
 
   if (!response.ok || !body.success) {
     throw new Error(body.message ?? "SkyLink flight pricing failed");
@@ -124,7 +124,7 @@ export const reserveFlight = async (input: unknown) => {
     body: JSON.stringify(data),
   });
 
-  const body = await response.json();
+  const body = await readSkylinkJson(response);
 
   if (!response.ok || !body.success) {
     throw new Error(body.message ?? "SkyLink flight reservation failed");

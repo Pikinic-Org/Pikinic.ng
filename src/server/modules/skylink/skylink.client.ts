@@ -10,6 +10,22 @@ type SkylinkLoginData = {
   expires_in: number;
 };
 
+// SkyLink's server has been seen sending blank lines and an invisible stray
+// character (a byte-order mark) before its JSON, which makes response.json()
+// throw "Unexpected token". Read the reply as text and parse only the JSON part.
+export const readSkylinkJson = async (response: Response) => {
+  const text = await response.text();
+  const start = text.search(/[{[]/);
+  const end = Math.max(text.lastIndexOf("}"), text.lastIndexOf("]"));
+
+  if (start === -1 || end < start) {
+    throw new Error(`SkyLink sent an unreadable response (HTTP ${response.status})`);
+  }
+  if (start > 0) console.warn(`[skylink] ignored ${start} stray characters before the JSON body`);
+
+  return JSON.parse(text.slice(start, end + 1));
+};
+
 const login = async (): Promise<SkylinkLoginData> => {
   const [email, password, baseUrl] = requireEnv("SKYLINK_EMAIL", "SKYLINK_PASSWORD", "SKYLINK_BASE_URL");
 
@@ -21,7 +37,7 @@ const login = async (): Promise<SkylinkLoginData> => {
     body: JSON.stringify({ email, password, remember_me: false }),
   });
 
-  const body = await response.json();
+  const body = await readSkylinkJson(response);
 
   if (!response.ok || body.status !== "success") {
     throw new Error(body.message ?? "Failed to log in to SkyLink API");
