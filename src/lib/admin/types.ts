@@ -131,6 +131,28 @@ export type Booking = {
   bookedAt: string;
 };
 
+// Live flight bookings from the flight-booking database — contact and payment
+// fields only, passport details are never sent to the admin UI.
+export type FlightBookingStatus = "pending_payment" | "paid" | "reserved" | "failed";
+
+export type FlightBookingRow = {
+  id: string;
+  status: FlightBookingStatus;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  tripType: string;
+  fromCode: string;
+  toCode: string;
+  departureDate: string;
+  returnDate: string | null;
+  amount: number;
+  currency: string;
+  pnr: string | null;
+  refundStatus: string | null;
+  createdAt: string;
+};
+
 export type ConsultantPaymentStatus = "pending" | "paid";
 export type ConsultantReviewStatus = "registered" | "attended" | "internship";
 

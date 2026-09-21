@@ -63,7 +63,7 @@ export const webhook = async (request: Request) => {
       const data = successfulTransactionEventDataSchema.parse(event.eventData);
       try {
         if (data.paymentReference.startsWith(CONSULTANT_PAYMENT_PREFIX)) {
-          await confirmConsultantPaymentByReference(data.paymentReference);
+          await confirmConsultantPaymentByReference(data.paymentReference, data.transactionReference);
         } else {
           await confirmPaymentAndReserve(data.paymentReference);
         }

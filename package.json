@@ -13,6 +13,8 @@
     "db:seed:admin": "tsx prisma/seed-admin.ts",
     "db:studio": "prisma studio",
     "db:bookings:migrate": "prisma migrate dev --config=prisma.bookings.config.ts",
+    "db:bookings:deploy": "prisma migrate deploy --config=prisma.bookings.config.ts",
+    "db:bookings:status": "prisma migrate status --config=prisma.bookings.config.ts",
     "db:bookings:studio": "prisma studio --config=prisma.bookings.config.ts"
   },
   "dependencies": {

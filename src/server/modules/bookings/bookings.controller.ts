@@ -1,11 +1,28 @@
 import { ZodError } from "zod";
 import { ok, fail, failFromError } from "@/lib/api-response";
+import { requireAdminSession } from "@/lib/auth/session";
 import { requireEnv } from "@/lib/env";
-import { confirmPaymentAndReserve, getBooking, startCheckout } from "@/server/modules/bookings/bookings.service";
+import {
+  confirmPaymentAndReserve,
+  getBooking,
+  listFlightBookings,
+  startCheckout,
+} from "@/server/modules/bookings/bookings.service";
 
 const hasValidProxySecret = (request: Request) => {
   const [proxySecret] = requireEnv("FLIGHTS_PROXY_SECRET");
   return request.headers.get("x-flights-proxy-secret") === proxySecret;
+};
+
+export const listAdmin = async () => {
+  const session = await requireAdminSession();
+  if (!session) return fail("Unauthorized.", 401);
+
+  try {
+    return ok(await listFlightBookings());
+  } catch (error) {
+    return failFromError(error, "Could not load flight bookings.");
+  }
 };
 
 export const checkout = async (request: Request) => {

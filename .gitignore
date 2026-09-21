@@ -44,3 +44,6 @@ next-env.d.ts
 # prisma generated client (regenerated via `prisma generate` / postinstall)
 /src/generated/prisma
 /src/generated/prisma-bookings
+
+# Local API test requests (contain live secrets)
+test-requests.http

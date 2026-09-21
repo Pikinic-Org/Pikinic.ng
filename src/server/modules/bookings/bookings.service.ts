@@ -3,6 +3,43 @@ import { getTransactionStatus, initiatePayment, initiateRefund } from "@/server/
 import { reserveFlight } from "@/server/modules/skylink/skylink.service";
 import { startCheckoutInputSchema } from "@/server/modules/bookings/bookings.schema";
 
+type StoredPrimaryGuest = {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  country_code?: string;
+};
+
+// Admin list view — deliberately returns only contact + payment fields.
+// Passport details live in `travellers` but never leave the server here.
+export const listFlightBookings = async () => {
+  const bookings = await prismaBookings.flightBooking.findMany({ orderBy: { createdAt: "desc" } });
+
+  return bookings.map((booking) => {
+    const guest = (booking.travellers as { primary_guest?: StoredPrimaryGuest } | null)?.primary_guest;
+    const phone = [guest?.country_code, guest?.phone].filter(Boolean).join(" ");
+
+    return {
+      id: booking.id,
+      status: booking.status,
+      customerName: [guest?.first_name, guest?.last_name].filter(Boolean).join(" ") || "—",
+      customerEmail: guest?.email ?? "—",
+      customerPhone: phone || "—",
+      tripType: booking.tripType,
+      fromCode: booking.fromCode,
+      toCode: booking.toCode,
+      departureDate: booking.departureDate.toISOString(),
+      returnDate: booking.returnDate?.toISOString() ?? null,
+      amount: booking.customerPrice,
+      currency: booking.currency,
+      pnr: booking.pnr,
+      refundStatus: booking.refundStatus,
+      createdAt: booking.createdAt.toISOString(),
+    };
+  });
+};
+
 export const startCheckout = async (input: unknown) => {
   const data = startCheckoutInputSchema.parse(input);
 
