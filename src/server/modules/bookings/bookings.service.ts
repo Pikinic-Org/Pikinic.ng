@@ -97,12 +97,36 @@ export const getBooking = async (id: string) => {
   return prismaBookings.flightBooking.findUnique({ where: { id } });
 };
 
+// A booking already marked "paid" counts as "someone is reserving it right
+// now" for this long. After that the claim can be taken again, so a request
+// that died mid-reserve doesn't leave a paid booking stuck forever.
+const RESERVE_CLAIM_WINDOW_MS = 60_000;
+
+// The Monnify webhook and the customer's return page can both ask us to
+// reserve within the same second. SkyLink lets a booking token be used once, so
+// a second reserve would fail and — worse — send a successfully booked
+// customer down the "failed, refund" path. This claim is one atomic UPDATE:
+// exactly one caller gets count === 1 and goes on to call SkyLink; the rest
+// leave the booking to that caller.
+const claimReservation = async (id: string, from: "pending_payment" | "paid"): Promise<boolean> => {
+  const claimed = await prismaBookings.flightBooking.updateMany({
+    where:
+      from === "pending_payment"
+        ? { id, status: "pending_payment" }
+        : { id, status: "paid", updatedAt: { lt: new Date(Date.now() - RESERVE_CLAIM_WINDOW_MS) } },
+    // Writing the same status still refreshes updatedAt, which is what marks
+    // the claim as taken.
+    data: { status: "paid" },
+  });
+  return claimed.count === 1;
+};
+
 // Called either by the Monnify webhook (production) or a manual poll (local
 // dev, or a belt-and-braces check right after the customer's browser returns
 // from Monnify's checkout) — either way, payment is re-verified against
 // Monnify's own API here, never trusted from the caller.
 export const confirmPaymentAndReserve = async (id: string) => {
-  let booking = await prismaBookings.flightBooking.findUnique({ where: { id } });
+  const booking = await prismaBookings.flightBooking.findUnique({ where: { id } });
   if (!booking) throw new Error("Booking not found");
 
   console.log(`[bookings] ${id} — confirmPaymentAndReserve called, current status=${booking.status}`);
@@ -122,13 +146,13 @@ export const confirmPaymentAndReserve = async (id: string) => {
     if (payment.paymentStatus !== "PAID") {
       return booking;
     }
-
-    booking = await prismaBookings.flightBooking.update({
-      where: { id },
-      data: { status: "paid" },
-    });
-    console.log(`[bookings] ${id} — marked paid, calling SkyLink reserve...`);
   }
+
+  if (!(await claimReservation(id, booking.status))) {
+    console.log(`[bookings] ${id} — another request is already reserving this booking, leaving it to that one`);
+    return (await prismaBookings.flightBooking.findUnique({ where: { id } })) ?? booking;
+  }
+  console.log(`[bookings] ${id} — marked paid, calling SkyLink reserve...`);
 
   try {
     const reservation = await reserveFlight({
