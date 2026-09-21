@@ -42,6 +42,18 @@ export type FlightOffer = {
   imageUrl?: string;
 };
 
+export type FlightDeal = {
+  id: string;
+  fromCode: string;
+  toCode: string;
+  tripType: "oneway" | "roundtrip";
+  discountPercent: number;
+  label?: string;
+  imageUrl?: string;
+  active: boolean;
+  validUntil?: string;
+};
+
 export type PackageCategory =
   | "Domestic"
   | "International"
@@ -117,4 +129,30 @@ export type Booking = {
   amount: number;
   status: BookingStatus;
   bookedAt: string;
+};
+
+export type ConsultantPaymentStatus = "pending" | "paid";
+export type ConsultantReviewStatus = "submitted" | "approved" | "rejected";
+
+export type TravelConsultant = {
+  id: string;
+  fullName: string;
+  email: string;
+  whatsapp: string;
+  institution: string;
+  courseOfStudy: string;
+  levelOfStudy: string;
+  city: string;
+  motivation: string;
+  experience: string | null;
+  referralSource: string | null;
+  paymentStatus: ConsultantPaymentStatus;
+  reviewStatus: ConsultantReviewStatus;
+  amount: number;
+  currency: string;
+  paymentReference: string | null;
+  monnifyTransactionReference: string | null;
+  paidAt: string | null;
+  adminNotes: string | null;
+  createdAt: string;
 };

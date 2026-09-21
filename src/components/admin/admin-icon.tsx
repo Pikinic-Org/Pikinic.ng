@@ -4,9 +4,11 @@ type AdminIconKey =
   | "dashboard"
   | "blog"
   | "flight"
+  | "deal"
   | "package"
   | "webinar"
   | "booking"
+  | "consultant"
   | "media"
   | "logout"
   | "plus"
@@ -42,6 +44,12 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <path d="M12 13v8" />
     </>
   ),
+  deal: (
+    <>
+      <path d="M3 11.5V4h7.5L21 14.5 13.5 22 3 11.5Z" />
+      <circle cx="8" cy="8.5" r="1.5" />
+    </>
+  ),
   webinar: (
     <>
       <rect x="3" y="5" width="14" height="11" rx="1" />
@@ -54,6 +62,13 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <rect x="3" y="4" width="18" height="17" rx="1.5" />
       <path d="M3 9h18M8 2v4M16 2v4" />
       <path d="M8 13.5l2 2 4-4.5" />
+    </>
+  ),
+  consultant: (
+    <>
+      <circle cx="9" cy="8" r="3.25" />
+      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
+      <path d="M16 5.5a3 3 0 0 1 0 5.5M18 14.5c1.9.8 3 2.6 3 5.5" />
     </>
   ),
   media: (

@@ -93,17 +93,21 @@ const travellerSchema = z.object({
   phone: z.string().min(1).optional(),
 });
 
+export const passengerCountsSchema = z.object({
+  adults: z.number().int().min(1).max(9),
+  children: z.number().int().min(0).default(0),
+  infants: z.number().int().min(0).default(0),
+});
+
+export const travellersInputSchema = z.object({
+  primary_guest: primaryGuestSchema,
+  travelers: z.record(z.string(), travellerSchema),
+});
+
 export const flightReserveInputSchema = z.object({
   booking_token: z.string().min(1),
-  passengers: z.object({
-    adults: z.number().int().min(1).max(9),
-    children: z.number().int().min(0).default(0),
-    infants: z.number().int().min(0).default(0),
-  }),
-  travellers: z.object({
-    primary_guest: primaryGuestSchema,
-    travelers: z.record(z.string(), travellerSchema),
-  }),
+  passengers: passengerCountsSchema,
+  travellers: travellersInputSchema,
   ticket_time_limit_hours: z.number().int().positive().default(48),
 });
 

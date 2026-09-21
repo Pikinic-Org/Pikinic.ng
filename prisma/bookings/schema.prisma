@@ -25,6 +25,21 @@ model MonnifySession {
   updatedAt   DateTime @updatedAt
 }
 
+// Binds a discount to one specific booking_token issued by our own
+// searchFlights() call, written only when that search matched an active
+// FlightDeal. priceFlight() looks this up by booking_token to apply the
+// discount — never trusts a client-supplied discount/deal id directly,
+// since booking_token is opaque and we can't otherwise verify a claimed
+// deal's route actually matches the flight being priced.
+model SkylinkDealToken {
+  bookingToken    String   @id
+  dealId          String
+  discountPercent Int
+  label           String?
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+}
+
 enum FlightBookingStatus {
   pending_payment
   paid
@@ -43,21 +58,31 @@ model FlightBooking {
   departureDate DateTime
   returnDate    DateTime?
 
-  // SkyLink reservation result (populated once /reserve succeeds)
-  pnr               String?
-  bookingReference  String?
-  carrier           String?
-  ticketDeadline    DateTime?
+  // SkyLink pricing — the token from /price, and both prices: what SkyLink
+  // confirmed (our cost basis) and what we actually charge (with markup).
+  bookingToken  String
+  verifiedPrice Int
+  customerPrice Int
+  currency      String
 
-  // Passenger + pricing detail
+  // SkyLink reservation result (populated once /reserve succeeds)
+  pnr              String?
+  bookingReference String?
+  carrier          String?
+  ticketDeadline   DateTime?
+
+  // Passenger + traveller detail
   passengers Json
   travellers Json
-  price      Int
-  currency   String
 
-  // Payment gate — /reserve must never fire before paymentStatus = paid
-  paymentReference String?
-  paymentStatus    String  @default("pending")
+  // Payment (Monnify) — this row's own id is used as Monnify's paymentReference,
+  // so no separate field is needed for that; this is Monnify's own reference,
+  // needed to poll /status when a webhook can't reach us (e.g. local dev).
+  monnifyTransactionReference String?
+
+  // Refund (Monnify) — set when a booking fails after payment already
+  // succeeded; this row's own id is reused as Monnify's refundReference too.
+  refundStatus String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

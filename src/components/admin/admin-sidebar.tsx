@@ -10,9 +10,11 @@ const navItems = [
   { href: "/admin", label: "Overview", icon: "dashboard" as const, exact: true },
   { href: "/admin/blogs", label: "Blogs", icon: "blog" as const },
   { href: "/admin/flights", label: "Flight Offers", icon: "flight" as const },
+  { href: "/admin/deals", label: "Flight Deals", icon: "deal" as const },
   { href: "/admin/packages", label: "Travel Packages", icon: "package" as const },
   { href: "/admin/webinars", label: "Webinars", icon: "webinar" as const },
   { href: "/admin/bookings", label: "Bookings", icon: "booking" as const },
+  { href: "/admin/consultants", label: "Travel Consultants", icon: "consultant" as const },
   { href: "/admin/media", label: "Media", icon: "media" as const },
 ];
 

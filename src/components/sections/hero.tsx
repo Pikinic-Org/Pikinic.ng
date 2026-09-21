@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { PathwayMark } from "@/components/ui/pathway-mark";
@@ -70,12 +71,14 @@ export function Hero() {
 
         <div className="reveal mt-16 w-full" style={{ animationDelay: "0.65s" }}>
           <div className="scroll-close relative aspect-video w-full origin-bottom overflow-hidden rounded-[2px] border border-border-primary">
-            {/* Placeholder fill until a real hero image/video lands here.
-                To wire one in: add `import Image from "next/image"` above,
-                then drop `<Image src="/images/<file>" alt="..." fill
-                sizes="100vw" className="object-cover" priority />` inside
-                this div, after the gradient (or in place of it). */}
-            <div className="mesh-gradient mesh-glow absolute inset-0" />
+            <Image
+              src="/images/hero.png"
+              alt="A smiling traveller with a suitcase and passport walking through an airport terminal at sunset"
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
           </div>
         </div>
       </Container>

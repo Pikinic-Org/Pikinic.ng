@@ -3,7 +3,16 @@ import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireEnv } from "@/lib/env";
 import { verifyMonnifyWebhookSignature } from "@/server/modules/monnify/monnify.client";
 import { getTransactionStatus, initiatePayment } from "@/server/modules/monnify/monnify.service";
-import { monnifyWebhookEventSchema } from "@/server/modules/monnify/monnify.schema";
+import {
+  monnifyWebhookEventSchema,
+  refundEventDataSchema,
+  successfulTransactionEventDataSchema,
+} from "@/server/modules/monnify/monnify.schema";
+import { confirmPaymentAndReserve, recordRefundOutcome } from "@/server/modules/bookings/bookings.service";
+import {
+  CONSULTANT_PAYMENT_PREFIX,
+  confirmPaymentByReference as confirmConsultantPaymentByReference,
+} from "@/server/modules/consultants/consultants.service";
 
 export const initiate = async (request: Request) => {
   const [proxySecret] = requireEnv("FLIGHTS_PROXY_SECRET");
@@ -48,7 +57,27 @@ export const webhook = async (request: Request) => {
 
   try {
     const event = monnifyWebhookEventSchema.parse(JSON.parse(rawBody));
-    console.log("Verified Monnify webhook event:", event.eventType, event.eventData.paymentReference);
+    console.log(`[bookings] webhook received — eventType=${event.eventType}`);
+
+    if (event.eventType === "SUCCESSFUL_TRANSACTION") {
+      const data = successfulTransactionEventDataSchema.parse(event.eventData);
+      try {
+        if (data.paymentReference.startsWith(CONSULTANT_PAYMENT_PREFIX)) {
+          await confirmConsultantPaymentByReference(data.paymentReference);
+        } else {
+          await confirmPaymentAndReserve(data.paymentReference);
+        }
+      } catch (error) {
+        // Already recorded as a failed booking (and refunded) inside
+        // confirmPaymentAndReserve — acknowledge the webhook regardless so
+        // Monnify doesn't retry a payment that was, in fact, received.
+        console.error("Booking confirmation failed after payment webhook:", error);
+      }
+    } else if (event.eventType === "SUCCESSFUL_REFUND" || event.eventType === "FAILED_REFUND") {
+      const data = refundEventDataSchema.parse(event.eventData);
+      await recordRefundOutcome(data.refundReference, data.refundStatus);
+    }
+
     return ok({ received: true });
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid payload.", 400);

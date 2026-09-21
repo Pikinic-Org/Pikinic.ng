@@ -1,6 +1,6 @@
 import { requireEnv } from "@/lib/env";
 import { getMonnifyAccessToken } from "@/server/modules/monnify/monnify.client";
-import { initiatePaymentInputSchema } from "@/server/modules/monnify/monnify.schema";
+import { initiatePaymentInputSchema, initiateRefundInputSchema } from "@/server/modules/monnify/monnify.schema";
 
 const PAYMENT_METHODS = ["CARD", "ACCOUNT_TRANSFER", "USSD"];
 
@@ -27,6 +27,30 @@ export const initiatePayment = async (input: unknown) => {
 
   if (!response.ok || !body.requestSuccessful) {
     throw new Error(body.responseMessage ?? "Monnify payment initiation failed");
+  }
+
+  return body.responseBody;
+};
+
+export const initiateRefund = async (input: unknown) => {
+  const data = initiateRefundInputSchema.parse(input);
+
+  const [baseUrl] = requireEnv("MONNIFY_BASE_URL");
+  const token = await getMonnifyAccessToken();
+
+  const response = await fetch(`${baseUrl}/api/v1/refunds/initiate-refund`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+
+  const body = await response.json();
+
+  if (!response.ok || !body.requestSuccessful) {
+    throw new Error(body.responseMessage ?? "Monnify refund initiation failed");
   }
 
   return body.responseBody;

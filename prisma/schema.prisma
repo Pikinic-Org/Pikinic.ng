@@ -59,6 +59,23 @@ model FlightOffer {
   updatedAt DateTime @updatedAt
 }
 
+// Unlike FlightOffer, deals never carry a fixed price — they're a discount
+// percentage matched against a route at live search time (see
+// skylink.service.ts) and applied on top of the real SkyLink fare.
+model FlightDeal {
+  id              String    @id @default(cuid())
+  fromCode        String
+  toCode          String
+  tripType        String
+  discountPercent Int
+  label           String?
+  imageUrl        String?
+  active          Boolean   @default(true)
+  validUntil      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
 enum PackageCategory {
   Domestic
   International
@@ -114,4 +131,44 @@ model MediaItem {
   height     Int?
   bytes      Int?
   uploadedAt DateTime @default(now())
+}
+
+enum ConsultantPaymentStatus {
+  pending
+  paid
+}
+
+enum ConsultantReviewStatus {
+  submitted
+  approved
+  rejected
+}
+
+// Student sign-ups for the /travel-consultancy programme. Lives in the admin
+// database (not the flight-bookings one) so the dashboard reads it directly.
+// paymentReference is what Monnify echoes back on the webhook; it is
+// regenerated on every payment attempt because Monnify rejects reused
+// references, so a registrant who abandons checkout can retry.
+model TravelConsultant {
+  id                          String                  @id @default(cuid())
+  fullName                    String
+  email                       String                  @unique
+  whatsapp                    String
+  institution                 String
+  courseOfStudy               String
+  levelOfStudy                String
+  city                        String
+  motivation                  String
+  experience                  String?
+  referralSource              String?
+  paymentStatus               ConsultantPaymentStatus @default(pending)
+  reviewStatus                ConsultantReviewStatus  @default(submitted)
+  amount                      Int
+  currency                    String                  @default("NGN")
+  paymentReference            String?                 @unique
+  monnifyTransactionReference String?
+  paidAt                      DateTime?
+  adminNotes                  String?
+  createdAt                   DateTime                @default(now())
+  updatedAt                   DateTime                @updatedAt
 }
