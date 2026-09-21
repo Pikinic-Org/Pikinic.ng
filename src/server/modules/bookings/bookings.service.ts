@@ -40,6 +40,13 @@ export const listFlightBookings = async () => {
   });
 };
 
+// Removes only this row from the flight-booking database. It does not cancel
+// a SkyLink reservation or refund a Monnify payment — it's for clearing
+// test/junk records from the admin dashboard.
+export const deleteFlightBooking = async (id: string) => {
+  await prismaBookings.flightBooking.delete({ where: { id } });
+};
+
 export const startCheckout = async (input: unknown) => {
   const data = startCheckoutInputSchema.parse(input);
 

@@ -4,6 +4,7 @@ import { requireAdminSession } from "@/lib/auth/session";
 import { requireEnv } from "@/lib/env";
 import {
   confirmPaymentAndReserve,
+  deleteFlightBooking,
   getBooking,
   listFlightBookings,
   startCheckout,
@@ -22,6 +23,19 @@ export const listAdmin = async () => {
     return ok(await listFlightBookings());
   } catch (error) {
     return failFromError(error, "Could not load flight bookings.");
+  }
+};
+
+export const removeAdmin = async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const session = await requireAdminSession();
+  if (!session) return fail("Unauthorized.", 401);
+
+  try {
+    const { id } = await params;
+    await deleteFlightBooking(id);
+    return ok({ ok: true });
+  } catch (error) {
+    return failFromError(error, "Could not delete flight booking.");
   }
 };
 

@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminPageHeader } from "@/components/admin/page-header";
 import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-table";
+import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { FlightBookingPill } from "@/components/admin/flight-booking-pill";
 import { StatTile, StatTileGrid } from "@/components/admin/stat-tile";
-import { listFlightBookings } from "@/lib/admin/api/bookings";
+import { deleteFlightBooking, listFlightBookings } from "@/lib/admin/api/bookings";
 import { formatAdminDate, formatAdminDateTime, formatNaira } from "@/lib/admin/utils/format";
 import type { FlightBookingRow, FlightBookingStatus } from "@/lib/admin/types";
 
@@ -31,6 +32,16 @@ export default function BookingsPage() {
       .then(setBookings)
       .catch(() => setError("Could not load flight bookings."));
   }, []);
+
+  const handleDelete = async (id: string) => {
+    setError("");
+    try {
+      await deleteFlightBooking(id);
+      setBookings((current) => (current ? current.filter((b) => b.id !== id) : current));
+    } catch {
+      setError("Could not delete that booking.");
+    }
+  };
 
   const metrics = useMemo(() => {
     const all = bookings ?? [];
@@ -95,6 +106,16 @@ export default function BookingsPage() {
     },
     { key: "pnr", header: "PNR", cell: (booking) => booking.pnr ?? "—" },
     { key: "bookedAt", header: "Booked", cell: (booking) => formatAdminDateTime(booking.createdAt) },
+    {
+      key: "actions",
+      header: "",
+      cell: (booking) => (
+        <ConfirmDeleteButton
+          confirmLabel={isPaid(booking) ? "Paid booking — delete record?" : "Delete?"}
+          onConfirm={() => handleDelete(booking.id)}
+        />
+      ),
+    },
   ];
 
   return (
