@@ -16,6 +16,14 @@ export const directorContact = {
   email: "adeniyi@pikinic.ng",
 };
 
+// Details from the official training flyer. The slot count is marketing copy
+// only; registration is not capped.
+export const consultancyProgramme = {
+  dateLabel: "Saturday, 10 October 2026",
+  venue: "Alausa Shopping Mall, Ikeja, Lagos",
+  slotsLabel: "50 limited slots available",
+};
+
 // Instagram is confirmed (@pikinic). X, TikTok, and LinkedIn are still
 // placeholder handles — swap for the real profiles before launch.
 export const socialLinks = [

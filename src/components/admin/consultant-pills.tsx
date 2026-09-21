@@ -9,9 +9,9 @@ const paymentStyles: Record<ConsultantPaymentStatus, string> = {
 };
 
 const reviewStyles: Record<ConsultantReviewStatus, string> = {
-  approved: "bg-green-100 text-green-800",
-  submitted: "bg-neutral-200 text-neutral-700",
-  rejected: "bg-red-100 text-red-700",
+  registered: "bg-neutral-200 text-neutral-700",
+  attended: "bg-green-100 text-green-800",
+  internship: "bg-green-700 text-neutral-0",
 };
 
 export function PaymentPill({ status }: { status: ConsultantPaymentStatus }) {

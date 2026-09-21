@@ -1,15 +1,5 @@
 import { z } from "zod";
 
-export const LEVELS_OF_STUDY = [
-  "100 Level",
-  "200 Level",
-  "300 Level",
-  "400 Level",
-  "500 Level",
-  "Postgraduate",
-  "Recent Graduate",
-] as const;
-
 const PHONE_PATTERN = /^[0-9+\-\s()]+$/;
 
 const optionalText = (max: number) =>
@@ -29,23 +19,15 @@ export const registerConsultantInputSchema = z.object({
     .refine((value) => PHONE_PATTERN.test(value) && value.replace(/\D/g, "").length >= 7, {
       message: "Enter a valid WhatsApp number.",
     }),
-  institution: z.string().trim().min(2, "Institution is required.").max(160),
-  courseOfStudy: z.string().trim().min(2, "Course of study is required.").max(160),
-  levelOfStudy: z.enum(LEVELS_OF_STUDY, { message: "Select your level of study." }),
   city: z.string().trim().min(2, "City is required.").max(120),
-  motivation: z
-    .string()
-    .trim()
-    .min(20, "Tell us a little more (at least 20 characters).")
-    .max(1500),
-  experience: optionalText(1500),
+  motivation: optionalText(1500),
   referralSource: optionalText(160),
 });
 
 export type RegisterConsultantInput = z.infer<typeof registerConsultantInputSchema>;
 
 export const consultantReviewUpdateSchema = z.object({
-  reviewStatus: z.enum(["submitted", "approved", "rejected"]).optional(),
+  reviewStatus: z.enum(["registered", "attended", "internship"]).optional(),
   adminNotes: z
     .string()
     .trim()

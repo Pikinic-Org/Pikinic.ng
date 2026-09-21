@@ -37,6 +37,11 @@ export default function ConsultantsListPage() {
       paid: paid.length,
       pending: all.length - paid.length,
       revenue: paid.reduce((sum, c) => sum + c.amount, 0),
+      // Stages only mean something once someone has paid.
+      enrolled: paid.filter((c) => c.reviewStatus === "registered").length,
+      attended: paid.filter((c) => c.reviewStatus === "attended").length,
+      internship: paid.filter((c) => c.reviewStatus === "internship").length,
+      paymentRate: all.length ? Math.round((paid.length / all.length) * 100) : 0,
     };
   }, [consultants]);
 
@@ -57,14 +62,12 @@ export default function ConsultantsListPage() {
       ),
     },
     {
-      key: "school",
-      header: "Institution",
+      key: "contact",
+      header: "Contact",
       cell: (c) => (
         <div>
-          <div>{c.institution}</div>
-          <div className="text-xs text-text-tertiary">
-            {c.courseOfStudy} · {c.levelOfStudy}
-          </div>
+          <div>{c.whatsapp}</div>
+          <div className="text-xs text-text-tertiary">{c.city}</div>
         </div>
       ),
     },
@@ -77,7 +80,7 @@ export default function ConsultantsListPage() {
     <div>
       <AdminPageHeader
         title="Travel Consultants"
-        description="Students who registered through /travel-consultancy, with payment and review status."
+        description="People who registered through /travel-consultancy, with payment and review status."
       />
 
       <SavedBanner createdMessage="Travel consultant added." updatedMessage="Travel consultant updated." />
@@ -90,6 +93,15 @@ export default function ConsultantsListPage() {
         <StatTile label="Awaiting Payment" value={consultants ? String(metrics.pending) : "…"} />
         <StatTile label="Revenue" value={consultants ? formatNaira(metrics.revenue) : "…"} accent />
       </StatTileGrid>
+
+      <div className="mt-6">
+        <StatTileGrid>
+          <StatTile label="Paid · Awaiting Training" value={consultants ? String(metrics.enrolled) : "…"} />
+          <StatTile label="Attended Training" value={consultants ? String(metrics.attended) : "…"} />
+          <StatTile label="On Paid Internship" value={consultants ? String(metrics.internship) : "…"} />
+          <StatTile label="Payment Rate" value={consultants ? `${metrics.paymentRate}%` : "…"} />
+        </StatTileGrid>
+      </div>
 
       <div className="mb-4 mt-8 flex gap-2">
         {filters.map((f) => (

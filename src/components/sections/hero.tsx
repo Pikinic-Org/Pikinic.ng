@@ -72,7 +72,7 @@ export function Hero() {
         <div className="reveal mt-16 w-full" style={{ animationDelay: "0.65s" }}>
           <div className="scroll-close relative aspect-video w-full origin-bottom overflow-hidden rounded-[2px] border border-border-primary">
             <Image
-              src="/images/hero.png"
+              src="/images/hero-blue.png"
               alt="A smiling traveller with a suitcase and passport walking through an airport terminal at sunset"
               fill
               priority

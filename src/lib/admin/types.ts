@@ -132,19 +132,15 @@ export type Booking = {
 };
 
 export type ConsultantPaymentStatus = "pending" | "paid";
-export type ConsultantReviewStatus = "submitted" | "approved" | "rejected";
+export type ConsultantReviewStatus = "registered" | "attended" | "internship";
 
 export type TravelConsultant = {
   id: string;
   fullName: string;
   email: string;
   whatsapp: string;
-  institution: string;
-  courseOfStudy: string;
-  levelOfStudy: string;
   city: string;
-  motivation: string;
-  experience: string | null;
+  motivation: string | null;
   referralSource: string | null;
   paymentStatus: ConsultantPaymentStatus;
   reviewStatus: ConsultantReviewStatus;

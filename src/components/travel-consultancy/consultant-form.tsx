@@ -4,41 +4,14 @@ import { useRef, useState, type FocusEvent, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const LEVELS_OF_STUDY = [
-  "100 Level",
-  "200 Level",
-  "300 Level",
-  "400 Level",
-  "500 Level",
-  "Postgraduate",
-  "Recent Graduate",
-];
-
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_PATTERN = /^[0-9+\-\s()]+$/;
 
-type FieldKey =
-  | "fullName"
-  | "email"
-  | "whatsapp"
-  | "institution"
-  | "courseOfStudy"
-  | "levelOfStudy"
-  | "city"
-  | "motivation";
+type FieldKey = "fullName" | "email" | "whatsapp" | "city";
 type FieldErrors = Partial<Record<FieldKey, string>>;
 type Status = "idle" | "submitting" | "error";
 
-const REQUIRED_FIELDS: FieldKey[] = [
-  "fullName",
-  "email",
-  "whatsapp",
-  "institution",
-  "courseOfStudy",
-  "levelOfStudy",
-  "city",
-  "motivation",
-];
+const REQUIRED_FIELDS: FieldKey[] = ["fullName", "email", "whatsapp", "city"];
 
 function validate(data: Record<string, FormDataEntryValue>): FieldErrors {
   const value = (key: string) => String(data[key] ?? "").trim();
@@ -54,13 +27,8 @@ function validate(data: Record<string, FormDataEntryValue>): FieldErrors {
     errors.whatsapp = "Numbers only — enter a valid phone number.";
   }
 
-  if (!value("institution")) errors.institution = "Institution is required.";
-  if (!value("courseOfStudy")) errors.courseOfStudy = "Course of study is required.";
-  if (!value("levelOfStudy")) errors.levelOfStudy = "Select your level of study.";
   if (!value("city")) errors.city = "City is required.";
 
-  if (!value("motivation")) errors.motivation = "Tell us why you want to join.";
-  else if (value("motivation").length < 20) errors.motivation = "Tell us a little more (at least 20 characters).";
 
   return errors;
 }
@@ -129,7 +97,7 @@ export function ConsultantForm({ fee }: { fee: number }) {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.error || "Something went wrong.");
 
-      // Hand off to Monnify's hosted checkout; it returns the student to
+      // Hand off to Monnify's hosted checkout; it returns them to
       // /travel-consultancy/confirmation once they've paid (or abandoned).
       window.location.href = body.checkoutUrl;
     } catch (error) {
@@ -185,74 +153,15 @@ export function ConsultantForm({ fee }: { fee: number }) {
         {textField("email", "Email Address", { type: "email", autoComplete: "email" })}
         {textField("whatsapp", "WhatsApp Number", { type: "tel", inputMode: "tel", autoComplete: "tel" })}
       </div>
-      {textField("institution", "Institution")}
-      <div className="grid gap-5 sm:grid-cols-2">
-        {textField("courseOfStudy", "Course of Study")}
-        <div>
-          <label htmlFor="levelOfStudy" className="text-sm font-medium text-text-primary">
-            Level of Study
-          </label>
-          <div className="relative mt-2">
-            <select
-              id="levelOfStudy"
-              name="levelOfStudy"
-              defaultValue=""
-              onBlur={handleBlur}
-              aria-invalid={fieldState("levelOfStudy") === "invalid"}
-              className={cn(inputClass, "h-11 appearance-none pr-10", borderClass("levelOfStudy"))}
-            >
-              <option value="" disabled>
-                Select level
-              </option>
-              {LEVELS_OF_STUDY.map((level) => (
-                <option key={level} value={level}>
-                  {level}
-                </option>
-              ))}
-            </select>
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
-          </div>
-          {fieldState("levelOfStudy") === "invalid" && (
-            <p className="mt-1.5 text-xs text-red-600">{fieldErrors.levelOfStudy}</p>
-          )}
-        </div>
-      </div>
       {textField("city", "City You're Based In")}
 
       <div>
         <label htmlFor="motivation" className="text-sm font-medium text-text-primary">
-          Why do you want to become a travel consultant?
+          Anything you&rsquo;d like us to know? (optional)
         </label>
         <textarea
           id="motivation"
           name="motivation"
-          rows={5}
-          onBlur={handleBlur}
-          aria-invalid={fieldState("motivation") === "invalid"}
-          className={cn(inputClass, "mt-2 py-3", borderClass("motivation"))}
-        />
-        {fieldState("motivation") === "invalid" && (
-          <p className="mt-1.5 text-xs text-red-600">{fieldErrors.motivation}</p>
-        )}
-      </div>
-
-      <div>
-        <label htmlFor="experience" className="text-sm font-medium text-text-primary">
-          Relevant experience (optional)
-        </label>
-        <textarea
-          id="experience"
-          name="experience"
           rows={3}
           className={cn(inputClass, "mt-2 border-border-primary py-3")}
         />
@@ -271,7 +180,7 @@ export function ConsultantForm({ fee }: { fee: number }) {
       </div>
 
       <div className="rounded-[2px] border border-border-primary bg-neutral-900/[0.03] px-4 py-3 text-sm text-text-secondary">
-        Registration fee: <span className="font-semibold text-text-primary">{formattedFee}</span>. You&rsquo;ll be
+        Training fee: <span className="font-semibold text-text-primary">{formattedFee}</span>. You&rsquo;ll be
         taken to a secure Monnify checkout to pay by card, bank transfer or USSD.
       </div>
 

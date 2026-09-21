@@ -139,12 +139,12 @@ enum ConsultantPaymentStatus {
 }
 
 enum ConsultantReviewStatus {
-  submitted
-  approved
-  rejected
+  registered
+  attended
+  internship
 }
 
-// Student sign-ups for the /travel-consultancy programme. Lives in the admin
+// Sign-ups for the /travel-consultancy programme. Lives in the admin
 // database (not the flight-bookings one) so the dashboard reads it directly.
 // paymentReference is what Monnify echoes back on the webhook; it is
 // regenerated on every payment attempt because Monnify rejects reused
@@ -154,15 +154,11 @@ model TravelConsultant {
   fullName                    String
   email                       String                  @unique
   whatsapp                    String
-  institution                 String
-  courseOfStudy               String
-  levelOfStudy                String
   city                        String
-  motivation                  String
-  experience                  String?
+  motivation                  String?
   referralSource              String?
   paymentStatus               ConsultantPaymentStatus @default(pending)
-  reviewStatus                ConsultantReviewStatus  @default(submitted)
+  reviewStatus                ConsultantReviewStatus  @default(registered)
   amount                      Int
   currency                    String                  @default("NGN")
   paymentReference            String?                 @unique

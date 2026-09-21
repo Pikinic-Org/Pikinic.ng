@@ -9,6 +9,7 @@ import { listBlogPosts } from "@/lib/admin/api/blog";
 import { listFlightOffers } from "@/lib/admin/api/flights";
 import { listPackages } from "@/lib/admin/api/packages";
 import { listWebinars } from "@/lib/admin/api/webinars";
+import { listConsultants } from "@/lib/admin/api/consultants";
 import { formatNaira } from "@/lib/admin/utils/format";
 import { getBookingMetrics } from "@/lib/admin/utils/metrics";
 
@@ -29,6 +30,27 @@ export default function AdminOverviewPage() {
     packages: number;
     webinars: number;
   } | null>(null);
+
+  const [consultantStats, setConsultantStats] = useState<{
+    total: number;
+    paid: number;
+    pending: number;
+    revenue: number;
+  } | null>(null);
+
+  useEffect(() => {
+    listConsultants()
+      .then((rows) => {
+        const paid = rows.filter((c) => c.paymentStatus === "paid");
+        setConsultantStats({
+          total: rows.length,
+          paid: paid.length,
+          pending: rows.length - paid.length,
+          revenue: paid.reduce((sum, c) => sum + c.amount, 0),
+        });
+      })
+      .catch(() => setConsultantStats({ total: 0, paid: 0, pending: 0, revenue: 0 }));
+  }, []);
 
   useEffect(() => {
     Promise.allSettled([listBlogPosts(), listFlightOffers(), listPackages(), listWebinars()]).then(
@@ -57,7 +79,7 @@ export default function AdminOverviewPage() {
         <StatTile label="Webinars" value={counts ? String(counts.webinars) : "…"} />
       </StatTileGrid>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+      <div className="mt-8 grid gap-6 lg:grid-cols-3">
         <div className="rounded-[2px] border border-border-primary p-6">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
             Bookings Snapshot
@@ -81,6 +103,38 @@ export default function AdminOverviewPage() {
             className="mt-5 inline-block text-xs font-semibold uppercase tracking-widest text-green-700 hover:text-green-800"
           >
             View all bookings →
+          </Link>
+        </div>
+
+        <div className="rounded-[2px] border border-border-primary p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+            Travel Consultancy Training
+          </h2>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Registrations</span>
+              <span className="font-semibold text-text-primary">{consultantStats ? consultantStats.total : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Paid</span>
+              <span className="font-semibold text-text-primary">{consultantStats ? consultantStats.paid : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Awaiting payment</span>
+              <span className="font-semibold text-text-primary">{consultantStats ? consultantStats.pending : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Revenue</span>
+              <span className="font-semibold text-text-primary">
+                {consultantStats ? formatNaira(consultantStats.revenue) : "…"}
+              </span>
+            </div>
+          </div>
+          <Link
+            href="/admin/consultants"
+            className="mt-5 inline-block text-xs font-semibold uppercase tracking-widest text-green-700 hover:text-green-800"
+          >
+            View all consultants →
           </Link>
         </div>
 

@@ -14,7 +14,7 @@ const MAX_ATTEMPTS = 5;
 
 // Monnify sends the browser back here the moment checkout closes, which can be
 // a beat before its own records say PAID — so poll a few times before giving
-// up and telling the student their payment is still being confirmed.
+// up and telling them their payment is still being confirmed.
 export function PaymentConfirmation({ registrationId }: { registrationId: string | undefined }) {
   const [state, setState] = useState<State>(registrationId ? { kind: "checking" } : { kind: "error" });
 

@@ -93,13 +93,8 @@ export default function ConsultantDetailPage() {
           </div>
           <Detail label="Email">{consultant.email}</Detail>
           <Detail label="WhatsApp">{consultant.whatsapp}</Detail>
-          <Detail label="Institution">{consultant.institution}</Detail>
-          <Detail label="Course · Level">
-            {consultant.courseOfStudy} · {consultant.levelOfStudy}
-          </Detail>
           <Detail label="City">{consultant.city}</Detail>
-          <Detail label="Why they want to join">{consultant.motivation}</Detail>
-          <Detail label="Relevant experience">{consultant.experience}</Detail>
+          <Detail label="Notes from applicant">{consultant.motivation}</Detail>
           <Detail label="Heard about us via">{consultant.referralSource}</Detail>
           <Detail label="Payment">
             {formatNaira(consultant.amount)}
@@ -109,11 +104,11 @@ export default function ConsultantDetailPage() {
         </dl>
 
         <form onSubmit={handleSubmit} className="space-y-5 self-start rounded-[2px] border border-border-primary p-6">
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">Review</h2>
-          <AdminSelect label="Review Status" name="reviewStatus" defaultValue={consultant.reviewStatus}>
-            <option value="submitted">Submitted</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">Programme</h2>
+          <AdminSelect label="Programme Stage" name="reviewStatus" defaultValue={consultant.reviewStatus}>
+            <option value="registered">Registered</option>
+            <option value="attended">Attended training</option>
+            <option value="internship">On paid internship</option>
           </AdminSelect>
           <AdminTextArea
             label="Internal Notes"
