@@ -1,6 +1,6 @@
 import { prismaBookings } from "@/lib/db-bookings";
 import { getTransactionStatus, initiatePayment, initiateRefund } from "@/server/modules/monnify/monnify.service";
-import { reserveFlight } from "@/server/modules/skylink/skylink.service";
+import { priceFlight, reserveFlight } from "@/server/modules/skylink/skylink.service";
 import { startCheckoutInputSchema } from "@/server/modules/bookings/bookings.schema";
 
 type StoredPrimaryGuest = {
@@ -155,8 +155,25 @@ export const confirmPaymentAndReserve = async (id: string) => {
   console.log(`[bookings] ${id} — marked paid, calling SkyLink reserve...`);
 
   try {
-    const reservation = await reserveFlight({
+    // SkyLink's own guidance: price immediately before reserve, and never
+    // reuse a booking_token across reserve calls. The token we've been
+    // holding was fetched when checkout started — payment can take minutes,
+    // so it may be stale or expired by now. Re-price with it and reserve
+    // against the fresh token instead of the original one.
+    const freshPricing = await priceFlight({
       booking_token: booking.bookingToken,
+      passengers: booking.passengers,
+      class: "economy",
+      currency: booking.currency,
+    });
+    if (freshPricing.verified_price !== booking.verifiedPrice) {
+      console.log(
+        `[bookings] ${id} — re-priced before reserve: was ${booking.verifiedPrice}, now ${freshPricing.verified_price} (customer already charged ${booking.customerPrice})`
+      );
+    }
+
+    const reservation = await reserveFlight({
+      booking_token: freshPricing.booking_token,
       passengers: booking.passengers,
       travellers: booking.travellers,
     });
@@ -166,6 +183,8 @@ export const confirmPaymentAndReserve = async (id: string) => {
       where: { id },
       data: {
         status: "reserved",
+        bookingToken: freshPricing.booking_token,
+        verifiedPrice: freshPricing.verified_price,
         pnr: reservation.pnr,
         bookingReference: reservation.booking_reference,
         carrier: reservation.carrier,
