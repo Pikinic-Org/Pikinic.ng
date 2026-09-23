@@ -50,6 +50,20 @@ export const deleteFlightBooking = async (id: string) => {
 export const startCheckout = async (input: unknown) => {
   const data = startCheckoutInputSchema.parse(input);
 
+  // data.verifiedPrice/customerPrice arrive from the client and are never
+  // trusted for what actually gets charged or ticketed — a tampered request
+  // body could otherwise get Monnify to charge far less than the real fare,
+  // and SkyLink would still issue the real ticket at reserve time. Re-derive
+  // both from a fresh SkyLink quote against the booking_token instead, the
+  // same opaque/unforgeable value confirmPaymentAndReserve re-prices with
+  // right before ticketing.
+  const freshPricing = await priceFlight({
+    booking_token: data.bookingToken,
+    passengers: data.passengers,
+    class: "economy",
+    currency: data.currency,
+  });
+
   const booking = await prismaBookings.flightBooking.create({
     data: {
       tripType: data.tripType,
@@ -57,9 +71,9 @@ export const startCheckout = async (input: unknown) => {
       toCode: data.toCode,
       departureDate: new Date(data.departureDate),
       returnDate: data.returnDate ? new Date(data.returnDate) : null,
-      bookingToken: data.bookingToken,
-      verifiedPrice: data.verifiedPrice,
-      customerPrice: data.customerPrice,
+      bookingToken: freshPricing.booking_token,
+      verifiedPrice: freshPricing.verified_price,
+      customerPrice: freshPricing.customer_price,
       currency: data.currency,
       passengers: data.passengers,
       travellers: data.travellers,
@@ -76,7 +90,7 @@ export const startCheckout = async (input: unknown) => {
   const redirectUrlWithBookingId = `${data.redirectUrl}${separator}bookingId=${booking.id}`;
 
   const payment = await initiatePayment({
-    amount: data.customerPrice,
+    amount: booking.customerPrice,
     customerName: `${primaryGuest.first_name} ${primaryGuest.last_name}`,
     customerEmail: primaryGuest.email,
     paymentReference: booking.id,
@@ -169,6 +183,18 @@ export const confirmPaymentAndReserve = async (id: string) => {
     if (freshPricing.verified_price !== booking.verifiedPrice) {
       console.log(
         `[bookings] ${id} — re-priced before reserve: was ${booking.verifiedPrice}, now ${freshPricing.verified_price} (customer already charged ${booking.customerPrice})`
+      );
+    }
+
+    // The fare's real cost now exceeds what was actually collected — a fare
+    // increase between checkout and payment, or (with the client-supplied
+    // price no longer trusted at checkout) a genuinely stale token. Either
+    // way, ticketing here would hand out a flight for less than it costs.
+    // Refuse and fall into the catch block below, which already marks the
+    // booking failed and auto-refunds the payment.
+    if (freshPricing.customer_price > booking.customerPrice) {
+      throw new Error(
+        `Re-priced fare (${freshPricing.customer_price}) exceeds what the customer paid (${booking.customerPrice}) — refusing to reserve.`
       );
     }
 
