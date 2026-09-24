@@ -30,6 +30,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    // 90 is for the full-bleed hero photo, which shows compression at 75.
+    qualities: [75, 90],
+  },
   async headers() {
     return [
       {

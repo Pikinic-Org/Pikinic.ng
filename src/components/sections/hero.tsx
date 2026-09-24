@@ -132,7 +132,7 @@ export function Hero() {
         </div>
       </Container>
 
-      <div ref={stage} className="relative h-svh overflow-hidden">
+      <div ref={stage} className="relative h-[62svh] overflow-hidden md:h-svh">
         <div
           ref={frame}
           className="absolute inset-0 overflow-hidden [clip-path:inset(6%_5%_6%_5%_round_12px)] motion-reduce:[clip-path:inset(4%_4%_4%_4%_round_12px)]"
@@ -143,7 +143,10 @@ export function Hero() {
               alt="A smiling traveller with a suitcase and passport walking through an airport terminal at sunset"
               fill
               priority
-              sizes="100vw"
+              quality={90}
+              // On phones the frame is taller than the photo's proportions, so
+              // the cover crop zooms in; ask for the full-resolution source.
+              sizes="(max-width: 767px) 250vw, 100vw"
               className="object-cover object-[70%_8%]"
             />
           </div>
