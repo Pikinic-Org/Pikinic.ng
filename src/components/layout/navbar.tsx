@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
-import { PathwayMark } from "@/components/ui/pathway-mark";
 import { cn } from "@/lib/utils";
 import { navLinks, siteConfig, whatWeOfferLinks } from "@/lib/constants";
 
@@ -63,21 +62,21 @@ export function Navbar() {
           )}
         >
           <Mark className="text-green-700" />
-          <span className="text-lg font-bold tracking-tight">
+          <span className="text-lg font-semibold tracking-tight">
             {siteConfig.name}
           </span>
         </Link>
 
         {/* Desktop nav — centered */}
         <div className="hidden flex-1 md:flex md:justify-center">
-        <div className="flex items-center gap-2 rounded-[2px] border border-border-primary bg-neutral-900/[0.04] p-2">
+        <div className="flex items-center gap-2 rounded-xl border border-border-primary bg-neutral-900/[0.04] p-1.5">
           {navLinks.map((link) => {
             const active = pathname === link.href;
 
             if (link.label === "Services") {
               return (
                 <div key={link.label} className="group relative">
-                  <span className="flex cursor-default items-center gap-1 rounded-sm px-3 py-2.5 text-sm font-semibold uppercase tracking-wide text-text-primary transition-colors hover:bg-neutral-900/[0.06]">
+                  <span className="flex cursor-default items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-900/[0.06]">
                     {link.label}
                     <svg
                       viewBox="0 0 24 24"
@@ -93,12 +92,12 @@ export function Navbar() {
                   </span>
 
                   <div className="invisible absolute left-0 top-full pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100">
-                    <div className="w-56 rounded-sm border border-border-primary bg-surface-primary p-2 shadow-lg">
+                    <div className="w-56 rounded-xl border border-border-primary bg-surface-primary p-1.5 shadow-lg">
                       {whatWeOfferLinks.map((item) => (
                         <Link
                           key={item.label}
                           href={item.href}
-                          className="block rounded-sm px-3 py-2 text-sm font-semibold text-text-primary transition-colors hover:bg-neutral-900/[0.06]"
+                          className="block rounded-lg px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-900/[0.06]"
                         >
                           {item.label}
                         </Link>
@@ -114,9 +113,9 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 className={cn(
-                  "rounded-sm px-3 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors",
+                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active
-                    ? "bg-green-200 text-green-900"
+                    ? "bg-green-500/20 text-green-900"
                     : "text-text-primary hover:bg-neutral-900/[0.06]"
                 )}
               >
@@ -130,7 +129,7 @@ export function Navbar() {
         {/* Right-side actions */}
         <div className="hidden items-center gap-3 md:flex">
           <Button href="https://travelsandtours.pikinic.ng" size="md" variant="secondary">
-            Book a Flight
+            Book a flight
           </Button>
         </div>
 
@@ -141,7 +140,7 @@ export function Navbar() {
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
           className={cn(
-            "relative z-50 flex h-10 w-10 items-center justify-center rounded-sm transition-colors md:hidden",
+            "relative z-50 flex h-10 w-10 items-center justify-center rounded-lg transition-colors md:hidden",
             open ? "text-neutral-0" : "text-text-primary"
           )}
         >
@@ -177,20 +176,6 @@ export function Navbar() {
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       )}
     >
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden text-neutral-0/20"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 1282 579"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path
-          d="M0.25 0.25H1281.25M640.75 0.25V578.25M640.75 0.25H480.625M640.75 0.25H800.875M640.75 578.25H480.625M640.75 578.25H800.875M961 0.25V578.25M961 0.25H800.875M961 0.25H1121.12M961 578.25H800.875M961 578.25H1121.12M320.5 0.25V578.25M320.5 0.25H480.625M320.5 0.25H160.375M320.5 578.25H480.625M320.5 578.25H160.375M0.25 289.25H1281.25M0.25 289.25V144.75M0.25 289.25V433.75M1281.25 289.25V144.75M1281.25 289.25V433.75M1281.25 144.75V0.25H1121.12M1281.25 144.75H0.25M0.25 144.75V0.25H160.375M0.25 433.75V578.25H160.375M0.25 433.75H1281.25M1281.25 433.75V578.25H1121.12M480.625 0.25V578.25M800.875 0.25V578.25M1121.12 0.25V578.25M160.375 0.25V578.25"
-          stroke="currentColor"
-          strokeWidth="0.5"
-        />
-      </svg>
-      <PathwayMark className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[420px] -translate-x-1/2 -translate-y-1/2 text-neutral-0/10" />
 
         <nav className="relative flex flex-1 flex-col items-start justify-center gap-2 px-8">
           {navLinks.map((link, i) => (
@@ -198,7 +183,7 @@ export function Navbar() {
               {link.label === "Services" ? (
                 <span
                   className={cn(
-                    "block text-4xl font-bold uppercase tracking-tight",
+                    "block text-4xl font-semibold tracking-tight",
                     open && "reveal"
                   )}
                   style={open ? { animationDelay: `${0.1 + i * 0.07}s` } : undefined}
@@ -209,7 +194,7 @@ export function Navbar() {
                 <Link
                   href={link.href}
                   className={cn(
-                    "text-4xl font-bold uppercase tracking-tight",
+                    "text-4xl font-semibold tracking-tight",
                     open && "reveal"
                   )}
                   style={open ? { animationDelay: `${0.1 + i * 0.07}s` } : undefined}
@@ -225,7 +210,7 @@ export function Navbar() {
                       key={item.label}
                       href={item.href}
                       className={cn(
-                        "text-base font-semibold uppercase tracking-wide text-neutral-0/60",
+                        "text-base font-medium text-neutral-0/60",
                         open && "reveal"
                       )}
                       style={
@@ -249,10 +234,10 @@ export function Navbar() {
           <Button
             href="https://travelsandtours.pikinic.ng"
             size="lg"
-            variant="primary"
-            className="w-full justify-center bg-neutral-0 text-green-800 hover:bg-green-50"
+            variant="inverse"
+            className="w-full"
           >
-            Book a Flight
+            Book a flight
           </Button>
         </div>
         <div
@@ -260,7 +245,7 @@ export function Navbar() {
           style={open ? { animationDelay: `${0.2 + navLinks.length * 0.07}s` } : undefined}
         >
           <Mark className="text-neutral-0" />
-          <span className="text-sm font-bold uppercase tracking-[0.3em] text-neutral-0">
+          <span className="text-sm font-semibold tracking-tight text-neutral-0">
             {siteConfig.name}
           </span>
         </div>

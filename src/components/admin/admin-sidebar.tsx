@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminIcon } from "@/components/admin/admin-icon";
-import { PathwayMark } from "@/components/ui/pathway-mark";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -17,9 +16,6 @@ const navItems = [
   { href: "/admin/consultants", label: "Travel Consultants", icon: "consultant" as const },
   { href: "/admin/media", label: "Media", icon: "media" as const },
 ];
-
-const squareFramePath =
-  "M0.25 0.25H1281.25M640.75 0.25V578.25M640.75 0.25H480.625M640.75 0.25H800.875M640.75 578.25H480.625M640.75 578.25H800.875M961 0.25V578.25M961 0.25H800.875M961 0.25H1121.12M961 578.25H800.875M961 578.25H1121.12M320.5 0.25V578.25M320.5 0.25H480.625M320.5 0.25H160.375M320.5 578.25H480.625M320.5 578.25H160.375M0.25 289.25H1281.25M0.25 289.25V144.75M0.25 289.25V433.75M1281.25 289.25V144.75M1281.25 289.25V433.75M1281.25 144.75V0.25H1121.12M1281.25 144.75H0.25M0.25 144.75V0.25H160.375M0.25 433.75V578.25H160.375M0.25 433.75H1281.25M1281.25 433.75V578.25H1121.12M480.625 0.25V578.25M800.875 0.25V578.25M1121.12 0.25V578.25M160.375 0.25V578.25";
 
 function LogoMark({ className }: { className?: string }) {
   return (
@@ -37,19 +33,8 @@ export function AdminSidebar() {
 
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-green-900 text-neutral-0">
-      <svg
-        className="pointer-events-none absolute inset-0 h-full w-full text-neutral-0/[0.06]"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 1282 579"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d={squareFramePath} stroke="currentColor" strokeWidth="0.5" />
-      </svg>
-      <PathwayMark className="pointer-events-none absolute -bottom-16 -right-16 h-64 w-64 text-neutral-0/[0.08]" />
-
       <div className="relative flex h-20 shrink-0 items-center gap-2.5 px-6">
-        <Link href="/admin" className="flex items-center gap-2.5 text-lg font-bold uppercase tracking-tight">
+        <Link href="/admin" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
           <LogoMark className="text-green-400" />
           Pikinic <span className="text-green-400">Admin</span>
         </Link>

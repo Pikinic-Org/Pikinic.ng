@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
+import { InlinePhoto } from "@/components/ui/inline-photo";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
 import { SocialIcon } from "@/components/ui/social-icon";
 import { ConsultantForm } from "@/components/travel-consultancy/consultant-form";
@@ -14,9 +15,6 @@ export const metadata: Metadata = {
 // The fee comes from an env var, so this page must render per request rather
 // than being frozen at build time.
 export const dynamic = "force-dynamic";
-
-const squareFramePath =
-  "M0.25 0.25H1281.25M640.75 0.25V578.25M640.75 0.25H480.625M640.75 0.25H800.875M640.75 578.25H480.625M640.75 578.25H800.875M961 0.25V578.25M961 0.25H800.875M961 0.25H1121.12M961 578.25H800.875M961 578.25H1121.12M320.5 0.25V578.25M320.5 0.25H480.625M320.5 0.25H160.375M320.5 578.25H480.625M320.5 578.25H160.375M0.25 289.25H1281.25M0.25 289.25V144.75M0.25 289.25V433.75M1281.25 289.25V144.75M1281.25 289.25V433.75M1281.25 144.75V0.25H1121.12M1281.25 144.75H0.25M0.25 144.75V0.25H160.375M0.25 433.75V578.25H160.375M0.25 433.75H1281.25M1281.25 433.75V578.25H1121.12M480.625 0.25V578.25M800.875 0.25V578.25M1121.12 0.25V578.25M160.375 0.25V578.25";
 
 // Content below comes from the official training flyer.
 const perks = [
@@ -41,29 +39,22 @@ export default function TravelConsultancyPage() {
 
   return (
     <section className="relative overflow-hidden py-24 md:py-32">
-      <svg
-        className="pointer-events-none absolute left-1/2 top-0 w-[90%] -translate-x-1/2 text-neutral-300/60"
-        viewBox="0 0 1282 579"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <path d={squareFramePath} stroke="currentColor" strokeWidth="0.5" />
-      </svg>
 
       <Container className="relative">
         <ScrollReveal className="grid gap-12 md:grid-cols-2 md:gap-16">
           <div>
-            <h1 className="text-4xl font-bold uppercase leading-[0.95] tracking-tight text-text-primary sm:text-5xl md:text-6xl">
-              Launch your career in <span className="text-green-700">travel consultancy.</span>
+            <h1 className="text-4xl font-semibold leading-[1.02] tracking-tight text-text-primary sm:text-5xl md:text-6xl">
+              Launch your career <InlinePhoto src="/images/travel-tours.jpg" alt="Friends on a beach" /> in{" "}
+              <span className="text-green-700">travel consultancy.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-text-secondary">
               Open to anyone, no experience needed. Register, pay the training fee, and learn how to build
               a travel business from scratch.
             </p>
 
-            <div className="mt-8 rounded-[2px] bg-green-700/[0.06] px-5 py-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-green-700">Bonus benefit</p>
-              <p className="mt-1 text-base font-semibold text-text-primary">
+            <div className="mt-8 rounded-xl bg-green-500/15 px-5 py-4">
+              <p className="text-sm font-medium text-green-700">Bonus benefit</p>
+              <p className="mt-1 text-base font-medium text-text-primary">
                 Paid internship included at no additional cost.
               </p>
             </div>
@@ -71,15 +62,15 @@ export default function TravelConsultancyPage() {
             <dl className="mt-8 grid gap-5 sm:grid-cols-3">
               {details.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+                  <dt className="text-sm text-text-secondary">
                     {item.label}
                   </dt>
-                  <dd className="mt-1 text-sm font-semibold text-text-primary">{item.value}</dd>
+                  <dd className="mt-1 text-sm font-medium text-text-primary">{item.value}</dd>
                 </div>
               ))}
             </dl>
 
-            <p className="mt-12 border-t border-border-primary pt-8 text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+            <p className="mt-12 border-t border-border-primary pt-8 text-sm text-text-secondary">
               What you&rsquo;ll learn
             </p>
             <ul className="mt-4 space-y-4">
@@ -102,7 +93,7 @@ export default function TravelConsultancyPage() {
             </ul>
 
             <div className="mt-10 border-t border-border-primary pt-8">
-              <p className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
+              <p className="text-sm text-text-secondary">
                 For more enquiries
               </p>
               <div className="mt-4 space-y-3">
@@ -112,10 +103,10 @@ export default function TravelConsultancyPage() {
                   rel="noreferrer noopener"
                   className="group flex items-center gap-3"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[2px] border border-border-primary text-text-secondary transition-colors group-hover:border-green-600 group-hover:text-green-700">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-primary text-text-secondary transition-colors group-hover:border-green-600 group-hover:text-green-700">
                     <SocialIcon icon="whatsapp" className="h-4 w-4" />
                   </span>
-                  <span className="text-base font-semibold text-text-primary transition-colors group-hover:text-green-700">
+                  <span className="text-base font-medium text-text-primary transition-colors group-hover:text-green-700">
                     {directorContact.whatsapp}
                   </span>
                 </a>
@@ -126,10 +117,10 @@ export default function TravelConsultancyPage() {
                     rel="noreferrer noopener"
                     className="group flex items-center gap-3"
                   >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[2px] border border-border-primary text-text-secondary transition-colors group-hover:border-green-600 group-hover:text-green-700">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-primary text-text-secondary transition-colors group-hover:border-green-600 group-hover:text-green-700">
                       <SocialIcon icon="whatsapp" className="h-4 w-4" />
                     </span>
-                    <span className="text-base font-semibold text-text-primary transition-colors group-hover:text-green-700">
+                    <span className="text-base font-medium text-text-primary transition-colors group-hover:text-green-700">
                       Join our WhatsApp group
                     </span>
                   </a>

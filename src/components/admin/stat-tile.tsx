@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { PathwayMark } from "@/components/ui/pathway-mark";
 import { cn } from "@/lib/utils";
 
 export function StatTileGrid({ children }: { children: ReactNode }) {
@@ -26,9 +25,6 @@ export function StatTile({
         accent ? "bg-green-800" : ""
       )}
     >
-      {accent && (
-        <PathwayMark className="pointer-events-none absolute -bottom-6 -right-6 h-28 w-28 text-neutral-0/10" />
-      )}
       <dd
         className={cn(
           "relative text-3xl font-bold tracking-tight",

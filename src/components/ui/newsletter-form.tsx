@@ -57,12 +57,12 @@ export function NewsletterForm({ className }: { className?: string }) {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Your email address"
-          className="h-11 w-full min-w-0 rounded-[2px] border border-neutral-700 bg-transparent px-4 text-sm text-neutral-0 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
+          className="h-11 w-full min-w-0 rounded-lg border border-neutral-700 bg-transparent px-4 text-sm text-neutral-0 placeholder:text-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-600"
         />
         <button
           type="submit"
           disabled={status === "submitting"}
-          className="h-11 shrink-0 rounded-[2px] bg-green-700 px-5 text-sm font-semibold uppercase tracking-wide text-neutral-0 transition-colors hover:bg-green-600 disabled:opacity-50"
+          className="h-11 shrink-0 rounded-lg bg-green-500 px-5 text-sm font-medium text-neutral-900 transition-colors hover:bg-green-600 disabled:opacity-50"
         >
           {status === "submitting" ? "…" : "Subscribe"}
         </button>

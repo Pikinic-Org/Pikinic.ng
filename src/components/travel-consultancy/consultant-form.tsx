@@ -50,7 +50,7 @@ function CheckIcon({ className }: { className?: string }) {
 }
 
 const inputClass =
-  "w-full rounded-[2px] border bg-surface-primary px-4 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700";
+  "w-full rounded-lg border bg-surface-primary px-4 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700";
 
 export function ConsultantForm({ fee }: { fee: number }) {
   const formRef = useRef<HTMLFormElement>(null);
@@ -179,7 +179,7 @@ export function ConsultantForm({ fee }: { fee: number }) {
         />
       </div>
 
-      <div className="rounded-[2px] border border-border-primary bg-neutral-900/[0.03] px-4 py-3 text-sm text-text-secondary">
+      <div className="rounded-xl bg-neutral-900/[0.04] px-4 py-3 text-sm text-text-secondary">
         Training fee: <span className="font-semibold text-text-primary">{formattedFee}</span>. You&rsquo;ll be
         taken to a secure Monnify checkout to pay by card, bank transfer or USSD.
       </div>

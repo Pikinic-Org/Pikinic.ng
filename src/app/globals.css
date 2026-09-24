@@ -1,27 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  /* Neutral scale */
+  /* Neutral scale — anchored on the brand's #f6f4ef (50) and #111111 (900) */
   --color-neutral-0: #ffffff;
-  --color-neutral-50: #f7f8f7;
-  --color-neutral-100: #eef0ef;
-  --color-neutral-200: #dee1df;
-  --color-neutral-300: #c4c9c5;
-  --color-neutral-400: #9ba39d;
-  --color-neutral-500: #757d78;
-  --color-neutral-600: #565d58;
-  --color-neutral-700: #3d423e;
-  --color-neutral-800: #262a27;
-  --color-neutral-900: #141613;
+  --color-neutral-50: #f6f4ef;
+  --color-neutral-100: #eeede9;
+  --color-neutral-200: #e2e1dd;
+  --color-neutral-300: #c8c7c3;
+  --color-neutral-400: #9f9e9a;
+  --color-neutral-500: #787774;
+  --color-neutral-600: #585755;
+  --color-neutral-700: #3d3d3b;
+  --color-neutral-800: #262625;
+  --color-neutral-900: #111111;
   --color-neutral-1000: #000000;
 
-  /* Warm "Listening Room" paper scale */
-  --color-paper-100: #fdfbf6;
-  --color-paper-200: #f6f1e7;
-  --color-paper-300: #ede4d1;
-
-  --color-warm-gray-200: #e3dcc8;
-  --color-warm-gray-300: #d2c7ab;
   /* Brand green scale */
   --color-green-50: #effbf3;
   --color-green-100: #d7f3e1;
@@ -32,7 +25,13 @@
   --color-green-600: #2f9d5c;
   --color-green-700: #227a48; /* text-safe brand green, 5.3:1 on white */
   --color-green-800: #175934;
-  --color-green-900: #012613; /* exact brand dark value */
+  --color-green-900: #002f16; /* exact brand dark value */
+
+  /* Secondary brand accents — one per service, used as the 10% accent */
+  --color-blue-500: #2577ef;
+  --color-orange-500: #f58634;
+  --color-yellow-500: #ffd93b;
+  --color-red-500: #ff4d4d;
 
   /* Semantic aliases */
   --color-text-primary: var(--color-neutral-900);
@@ -59,7 +58,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-outfit);
+  --font-sans: var(--font-nexa);
+  --font-heading: var(--font-grift);
 
   --color-neutral-0: var(--color-neutral-0);
   --color-neutral-50: var(--color-neutral-50);
@@ -74,13 +74,6 @@
   --color-neutral-900: var(--color-neutral-900);
   --color-neutral-1000: var(--color-neutral-1000);
 
-  --color-paper-100: var(--color-paper-100);
-  --color-paper-200: var(--color-paper-200);
-  --color-paper-300: var(--color-paper-300);
-
-  --color-warm-gray-200: var(--color-warm-gray-200);
-  --color-warm-gray-300: var(--color-warm-gray-300);
-
   --color-green-50: var(--color-green-50);
   --color-green-100: var(--color-green-100);
   --color-green-200: var(--color-green-200);
@@ -91,6 +84,11 @@
   --color-green-700: var(--color-green-700);
   --color-green-800: var(--color-green-800);
   --color-green-900: var(--color-green-900);
+
+  --color-blue-500: var(--color-blue-500);
+  --color-orange-500: var(--color-orange-500);
+  --color-yellow-500: var(--color-yellow-500);
+  --color-red-500: var(--color-red-500);
 
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
@@ -114,17 +112,22 @@
   --color-interactive-primary-active: var(--color-interactive-primary-active);
   --color-interactive-on-primary: var(--color-interactive-on-primary);
 
-  /* Radius — tied to component type, not size (per design system) */
+  /* Radius — kept tight: cards 12px, nested images 10px, buttons 8px */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
 }
 
 body {
   background: var(--color-background-primary);
   color: var(--color-text-primary);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), system-ui, sans-serif;
 }
 
 /* Font sizes, weights and line-heights below all match Tailwind's default
@@ -137,30 +140,6 @@ body {
    reads and edits like normal keyframes, and degrades cleanly under
    prefers-reduced-motion below.
    --------------------------------------------------------------------- */
-
-.mesh-gradient {
-  background:
-    radial-gradient(at 15% 20%, var(--color-green-300) 0px, transparent 55%),
-    radial-gradient(at 85% 10%, var(--color-green-500) 0px, transparent 50%),
-    radial-gradient(at 20% 90%, var(--color-green-700) 0px, transparent 55%),
-    radial-gradient(at 90% 85%, var(--color-green-200) 0px, transparent 50%),
-    var(--color-green-50);
-}
-@keyframes mesh-breathe {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.06); opacity: 0.85; }
-}
-.mesh-glow {
-  animation: mesh-breathe 9s ease-in-out infinite;
-}
-
-@keyframes float-y {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-14px); }
-}
-.float-slow {
-  animation: float-y 8s ease-in-out infinite;
-}
 
 @keyframes fade-up-blur {
   from { opacity: 0; transform: translateY(22px); filter: blur(6px); }
@@ -180,15 +159,6 @@ body {
   animation: pulse-dot 2.2s ease-out infinite;
 }
 
-@keyframes draw-line {
-  to { stroke-dashoffset: 0; }
-}
-.draw-underline {
-  stroke-dasharray: 320;
-  stroke-dashoffset: 320;
-  animation: draw-line 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
 /* Scroll-triggered reveal — driven by the useScrollReveal IntersectionObserver
    hook, which toggles .is-visible once an element crosses the viewport. */
 .scroll-reveal {
@@ -202,24 +172,6 @@ body {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
-}
-
-/* Hero image card — scrolls itself shut as the next section arrives.
-   Progressive enhancement: browsers without scroll-driven animations
-   (animation-timeline) just keep the card static, which is a fine default. */
-@supports (animation-timeline: view()) {
-  .scroll-close {
-    animation: hero-video-close linear both;
-    animation-timeline: view();
-    animation-range: cover 45% cover 100%;
-  }
-  @keyframes hero-video-close {
-    to {
-      transform: scale(0.94) translateY(-18px);
-      opacity: 0.35;
-      filter: saturate(0.7);
-    }
-  }
 }
 
 /* Custom cursor — a bordered ring with a solid green dot centered inside it,
@@ -271,8 +223,6 @@ html.custom-cursor-active * {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mesh-glow,
-  .float-slow,
   .pulse-dot {
     animation: none !important;
   }
@@ -283,12 +233,5 @@ html.custom-cursor-active * {
     transition: none !important;
     filter: none;
     transform: none;
-  }
-  .draw-underline {
-    stroke-dashoffset: 0;
-    animation: none !important;
-  }
-  .scroll-close {
-    animation: none !important;
   }
 }

@@ -51,7 +51,7 @@ export function PaymentConfirmation({ registrationId }: { registrationId: string
   }, [registrationId]);
 
   return (
-    <div className="rounded-[2px] border border-border-primary bg-surface-primary p-8 text-center md:p-12">
+    <div className="rounded-2xl bg-surface-primary p-8 text-center md:p-12">
       {state.kind === "checking" && (
         <>
           <p className="text-lg font-semibold text-text-primary">Confirming your payment…</p>

@@ -77,57 +77,52 @@ export type Service = {
   number: string;
   name: string;
   heading: string;
-  tagline?: string;
   description: string;
   image: { src: string; alt: string };
   href: string;
-  theme: "light" | "dark";
+  accent: "blue" | "orange" | "yellow" | "red";
 };
 
 export const services: Service[] = [
   {
     number: "01",
     name: "Study Abroad",
-    heading: "STUDY ABROAD",
-    tagline: "Pay Nothing to Us.",
+    heading: "Study abroad",
     description:
       "International school placement, university applications, and visa support at zero cost to you. We earn from the universities — so you never pay an agent fee.",
     image: { src: "/images/study-abroad.jpg", alt: "Historic university courtyard" },
     href: "https://studyabroad.pikinic.ng",
-    theme: "light",
+    accent: "blue",
   },
   {
     number: "02",
     name: "Travel and Tours",
-    heading: "TRAVEL AND TOURS",
-    tagline: "Fly Further. Travel Smarter.",
+    heading: "Travel and tours",
     description:
       "Flights, vacation packages, and travel planning for Nigerians going places. We find the best fares, build the best itineraries, and make sure you arrive ready.",
     image: { src: "/images/travel-tours.jpg", alt: "Friends celebrating together on a beach" },
     href: "https://travelsandtours.pikinic.ng",
-    theme: "dark",
+    accent: "orange",
   },
   {
     number: "03",
     name: "Stay and Ride",
-    heading: "STAY AND RIDE",
-    tagline: "Land. Stay. Get Moving.",
+    heading: "Stay and ride",
     description:
       "Short-stay apartments and rental cars for arrivals, business travellers, and anyone who needs a reliable base. Book where you stay and how you move in one place.",
     image: { src: "/images/stay-ride.jpg", alt: "Warmly styled living room" },
     href: "https://stayandride.pikinic.ng",
-    theme: "light",
+    accent: "yellow",
   },
   {
     number: "04",
     name: "Finance",
-    heading: "FINANCE",
-    tagline: "We Handle the Financial Side Too.",
+    heading: "Finance",
     description:
       "Proof of funds, school fee payments, visa fee payments, and study loan facilitation. We handle the financial complexity of moving abroad so you're not doing it alone.",
     image: { src: "/images/finance.png", alt: "Reviewing financial documents and a passport at a sunlit desk" },
     href: "https://firstmushrooom.com",
-    theme: "dark",
+    accent: "red",
   },
 ];
 
@@ -161,17 +156,17 @@ export const testimonials = [
 ];
 
 export const stats: Stat[] = [
-  { value: "56", suffix: "+", label: "Students Enrolled" },
-  { value: "98", suffix: "%", label: "Visa Success Rate" },
-  { value: "0", prefix: "₦", label: "Agent Fees Charged", accent: true },
-  { value: "80", suffix: "+", label: "Flights Booked" },
+  { value: "56", suffix: "+", label: "Students enrolled" },
+  { value: "98", suffix: "%", label: "Visa success rate" },
+  { value: "0", prefix: "₦", label: "Agent fees charged", accent: true },
+  { value: "80", suffix: "+", label: "Flights booked" },
 ];
 
 export const footerColumns = [
   {
     heading: "Explore",
     links: [
-      { label: "Flight Booking", href: "https://travelsandtours.pikinic.ng" },
+      { label: "Flight booking", href: "https://travelsandtours.pikinic.ng" },
       { label: "Scholarship", href: "https://studyabroad.pikinic.ng" },
       { label: "Vacation", href: "https://travelsandtours.pikinic.ng" },
     ],
@@ -180,7 +175,7 @@ export const footerColumns = [
     heading: "Services",
     links: [
       { label: "Study Abroad", href: "https://studyabroad.pikinic.ng" },
-      { label: "Travels and Tour", href: "https://travelsandtours.pikinic.ng" },
+      { label: "Travel and tours", href: "https://travelsandtours.pikinic.ng" },
       { label: "Stay and Ride", href: "https://stayandride.pikinic.ng" },
       { label: "Finance", href: "https://firstmushrooom.com" },
     ],
@@ -188,14 +183,15 @@ export const footerColumns = [
   {
     heading: "About",
     links: [
-      { label: "Our Story", href: "/about" },
+      { label: "Our story", href: "/about" },
       { label: "Team", href: "/about#team" },
       { label: "Careers", href: "/about#careers" },
     ],
   },
 ];
 
-export const team = [
-  { name: "Akintoye Adeniyi", role: "Director" },
+// photo: background-removed portrait; members without one show their initials.
+export const team: { name: string; role: string; photo?: string }[] = [
+  { name: "Akintoye Adeniyi", role: "Director", photo: "/images/founder.png" },
   { name: "Akintoye Adepeju", role: "Admin" },
 ];

@@ -111,7 +111,7 @@ export function AmaForm() {
 
   if (status === "success") {
     return (
-      <div className="rounded-[2px] border border-border-primary bg-surface-primary p-8 text-center">
+      <div className="rounded-2xl bg-surface-primary p-8 text-center">
         <p className="text-lg font-semibold text-text-primary">
           Question submitted.
         </p>
@@ -151,7 +151,7 @@ export function AmaForm() {
             onBlur={handleBlur}
             aria-invalid={fieldState("name") === "invalid"}
             className={cn(
-              "h-11 w-full rounded-[2px] border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
+              "h-11 w-full rounded-lg border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
               borderClass("name")
             )}
           />
@@ -177,7 +177,7 @@ export function AmaForm() {
             onBlur={handleBlur}
             aria-invalid={fieldState("email") === "invalid"}
             className={cn(
-              "h-11 w-full rounded-[2px] border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
+              "h-11 w-full rounded-lg border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
               borderClass("email")
             )}
           />
@@ -204,7 +204,7 @@ export function AmaForm() {
             onBlur={handleBlur}
             aria-invalid={fieldState("whatsapp") === "invalid"}
             className={cn(
-              "h-11 w-full rounded-[2px] border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
+              "h-11 w-full rounded-lg border bg-surface-primary px-4 pr-10 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
               borderClass("whatsapp")
             )}
           />
@@ -230,7 +230,7 @@ export function AmaForm() {
             onBlur={handleBlur}
             aria-invalid={fieldState("question") === "invalid"}
             className={cn(
-              "w-full rounded-[2px] border bg-surface-primary px-4 py-3 text-sm text-text-primary placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
+              "w-full rounded-lg border bg-surface-primary px-4 py-3 text-sm text-text-primary placeholder:text-text-tertiary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700",
               borderClass("question")
             )}
           />
