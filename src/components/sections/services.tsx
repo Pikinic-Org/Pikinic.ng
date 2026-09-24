@@ -41,9 +41,13 @@ const slugify = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-")
 export function Services() {
   const root = useRef<HTMLDivElement>(null);
 
-  // Pinned panels with overscroll, after GSAP's "Slides Pinning - Overscroll"
-  // demo: each panel pins once its bottom meets the viewport's, then shrinks and
-  // fades while the next panel slides over it. The last panel scrolls normally.
+  // Desktop: pinned panels with overscroll, after GSAP's "Slides Pinning -
+  // Overscroll" demo: each panel pins once its bottom meets the viewport's, then
+  // shrinks and fades while the next panel slides over it. The last panel scrolls
+  // normally.
+  // Phones: GSAP pinning fights the collapsing address bar, so the cards stack
+  // with CSS position: sticky instead, and GSAP only shrinks and dims the card
+  // being covered. Without the script the cards still stack.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -66,6 +70,24 @@ export function Services() {
             })
             .fromTo(panel, { scale: 1, opacity: 1 }, { scale: 0.7, opacity: 0.5, duration: 0.9 })
             .to(panel, { opacity: 0, duration: 0.1 });
+        });
+      });
+
+      mm.add("(max-width: 767px) and (prefers-reduced-motion: no-preference)", () => {
+        const panels = gsap.utils.toArray<HTMLElement>("[data-service-panel]");
+
+        panels.slice(0, -1).forEach((panel, i) => {
+          gsap.to(panel, {
+            scale: 0.92,
+            filter: "brightness(0.7)",
+            ease: "none",
+            scrollTrigger: {
+              trigger: panels[i + 1],
+              start: "top bottom",
+              end: "top 88px",
+              scrub: true,
+            },
+          });
         });
       });
 
@@ -96,25 +118,25 @@ export function Services() {
               id={slugify(service.name)}
               data-service-panel
               className={cn(
-                "relative origin-center overflow-hidden rounded-2xl md:h-svh md:rounded-none",
+                "sticky top-[88px] origin-top overflow-hidden rounded-2xl md:relative md:top-auto md:h-svh md:origin-center md:rounded-none",
                 accent.panel
               )}
             >
-              <Container className="grid h-full gap-8 py-10 md:grid-cols-[1.1fr_1fr] md:gap-12 md:py-16">
-                <div className="flex flex-col justify-between gap-10">
-                  <h3 className="text-5xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-8xl">
+              <Container className="grid h-full gap-6 py-8 md:grid-cols-[1.1fr_1fr] md:gap-12 md:py-16">
+                <div className="flex flex-col justify-between gap-6 md:gap-10">
+                  <h3 className="text-4xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-8xl">
                     {service.heading}
                   </h3>
 
-                  <div className="flex max-w-md flex-col gap-6">
-                    <p className={cn("text-lg leading-relaxed", accent.muted)}>{service.description}</p>
+                  <div className="flex max-w-md flex-col gap-5 md:gap-6">
+                    <p className={cn("text-base leading-relaxed md:text-lg", accent.muted)}>{service.description}</p>
                     <Button href={service.href} size="lg" className={accent.button}>
                       Get started
                     </Button>
                   </div>
                 </div>
 
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl md:aspect-auto">
+                <div className="relative aspect-[16/10] overflow-hidden rounded-xl md:aspect-auto">
                   <Image
                     src={service.image.src}
                     alt={service.image.alt}
