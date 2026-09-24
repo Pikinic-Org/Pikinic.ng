@@ -1,6 +1,6 @@
 import { Container } from "@/components/ui/container";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
-import { BrandPattern } from "@/components/ui/brand-pattern";
+import { DeepGreenBackdrop } from "@/components/ui/brand-pattern";
 import { StatCounter } from "@/components/sections/stat-counter";
 import { stats } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export function Stats() {
                   stat.accent ? "bg-green-900 text-neutral-0" : "bg-surface-primary text-text-primary"
                 )}
               >
-                {stat.accent && <BrandPattern className="-z-10" />}
+                {stat.accent && <DeepGreenBackdrop />}
                 <dt className={cn("text-sm", stat.accent ? "text-neutral-0/70" : "text-text-secondary")}>
                   {stat.label}
                 </dt>

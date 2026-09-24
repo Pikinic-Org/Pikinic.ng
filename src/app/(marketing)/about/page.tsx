@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { BrandPattern } from "@/components/ui/brand-pattern";
+import { DeepGreenBackdrop } from "@/components/ui/brand-pattern";
 import { Container } from "@/components/ui/container";
 import { InlinePhoto } from "@/components/ui/inline-photo";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -124,10 +124,11 @@ export default function AboutPage() {
                   key={item.title}
                   className={
                     dark
-                      ? "flex min-h-80 flex-col justify-between gap-10 rounded-2xl bg-green-900 p-6 text-neutral-0 md:p-10"
+                      ? "relative isolate flex min-h-80 flex-col justify-between gap-10 overflow-hidden rounded-2xl bg-green-900 p-6 text-neutral-0 md:p-10"
                       : "flex min-h-80 flex-col justify-between gap-10 rounded-2xl bg-surface-primary p-6 text-text-primary md:p-10"
                   }
                 >
+                  {dark && <DeepGreenBackdrop />}
                   <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">{item.title}</h2>
                   <p className={dark ? "max-w-md text-lg leading-relaxed text-neutral-0/75" : "max-w-md text-lg leading-relaxed text-text-secondary"}>
                     {item.text}
@@ -183,7 +184,7 @@ export default function AboutPage() {
         <Container>
           <ScrollReveal className="grid gap-10 md:grid-cols-[minmax(0,5fr)_7fr] md:gap-16">
             <div className="relative isolate aspect-[4/5] overflow-hidden rounded-2xl bg-green-900 md:sticky md:top-28 md:self-start">
-              <BrandPattern className="-z-10" />
+              <DeepGreenBackdrop />
               <Image
                 src="/images/founder.png"
                 alt="Adeniyi Akintoye, Director of Pikinic"

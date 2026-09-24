@@ -16,3 +16,15 @@ export function BrandPattern({ className }: { className?: string }) {
     />
   );
 }
+
+// The standard backdrop for a deep-green card: the pattern on green-900 with a
+// dark gradient rising from the bottom so text over it stays legible. The card
+// itself needs `relative isolate overflow-hidden`.
+export function DeepGreenBackdrop({ className }: { className?: string }) {
+  return (
+    <div aria-hidden className={cn("absolute inset-0 -z-10 bg-green-900", className)}>
+      <BrandPattern />
+      <div className="absolute inset-0 bg-gradient-to-t from-neutral-900/90 via-neutral-900/25 to-transparent" />
+    </div>
+  );
+}
