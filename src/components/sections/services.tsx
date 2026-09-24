@@ -46,8 +46,8 @@ export function Services() {
   // shrinks and fades while the next panel slides over it. The last panel scrolls
   // normally.
   // Phones: GSAP pinning fights the collapsing address bar, so the cards stack
-  // with CSS position: sticky instead, and GSAP only shrinks and dims the card
-  // being covered. Without the script the cards still stack.
+  // with CSS position: sticky instead, and GSAP only shrinks the card being
+  // covered. Without the script the cards still stack.
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -79,7 +79,6 @@ export function Services() {
         panels.slice(0, -1).forEach((panel, i) => {
           gsap.to(panel, {
             scale: 0.92,
-            filter: "brightness(0.7)",
             ease: "none",
             scrollTrigger: {
               trigger: panels[i + 1],
