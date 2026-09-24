@@ -1,4 +1,4 @@
-import { BrandPattern } from "@/components/ui/brand-pattern";
+import { DeepGreenBackdrop } from "@/components/ui/brand-pattern";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -7,7 +7,7 @@ export function Cta() {
   return (
     <section className="px-3 pb-3 md:px-4 md:pb-4">
       <div className="relative isolate overflow-hidden rounded-2xl bg-green-900 py-24 text-neutral-0 md:py-36">
-        <BrandPattern className="-z-10" />
+        <DeepGreenBackdrop />
         <Container className="flex flex-col items-center text-center">
           <ScrollReveal className="flex flex-col items-center">
             <h2 className="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
