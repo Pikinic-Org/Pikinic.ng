@@ -56,6 +56,7 @@ async function main() {
 
   console.log(`Uploaded ${(result.bytes / 1024 / 1024).toFixed(2)} MB as ${result.public_id} (${result.pages ?? "?"} pages).`);
   console.log("It is private: only signed links from /api/waec-guide/download can fetch it.");
+  console.log(`To offer the download on the site, set WAEC_GUIDE_PUBLIC_ID=${result.public_id} on your host and redeploy.`);
 }
 
 main().catch((error) => {

@@ -46,7 +46,7 @@ export default function GuideLeadsPage() {
       total: rows.length,
       downloaded,
       rate: rows.length ? Math.round((downloaded / rows.length) * 100) : 0,
-      hasResult: rows.filter((l) => l.stage === "WAEC result in hand").length,
+      profiled: rows.filter((l) => l.profileCompletedAt).length,
     };
   }, [rows]);
 
@@ -111,6 +111,22 @@ export default function GuideLeadsPage() {
       ),
     },
     { key: "stage", header: "Stage", cell: (lead) => lead.stage },
+    {
+      key: "profile",
+      header: "Profile",
+      cell: (lead) =>
+        lead.profileCompletedAt ? (
+          <div className="text-xs leading-relaxed text-text-secondary">
+            <div className="text-sm text-text-primary">
+              {[lead.qualification, lead.fieldOfStudy].filter(Boolean).join(" · ") || "—"}
+            </div>
+            <div>{[lead.country, lead.intake].filter(Boolean).join(" · ")}</div>
+            {lead.funding && <div>Funding: {lead.funding}</div>}
+          </div>
+        ) : (
+          <span className="text-text-tertiary">Not added</span>
+        ),
+    },
     { key: "source", header: "Source", cell: (lead) => lead.source },
     {
       key: "downloads",
@@ -139,7 +155,7 @@ export default function GuideLeadsPage() {
     <div>
       <AdminPageHeader
         title="Guide Leads"
-        description="People who asked for the free WAEC guide, from talks, events and the website."
+        description="People who asked for a free study abroad review, from talks, events and the website."
       />
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
@@ -149,7 +165,7 @@ export default function GuideLeadsPage() {
         <StatTile label="Leads" value={leads ? String(metrics.total) : "…"} accent />
         <StatTile label="Downloaded" value={leads ? String(metrics.downloaded) : "…"} />
         <StatTile label="Download rate" value={leads ? `${metrics.rate}%` : "…"} />
-        <StatTile label="WAEC result in hand" value={leads ? String(metrics.hasResult) : "…"} />
+        <StatTile label="Added their profile" value={leads ? String(metrics.profiled) : "…"} />
       </StatTileGrid>
 
       <div className="mb-4 mt-8 flex flex-wrap items-center gap-3">

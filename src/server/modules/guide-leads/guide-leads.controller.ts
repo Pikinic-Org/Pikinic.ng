@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
+import { isGuideAvailable } from "@/lib/cloudinary";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
 import { HttpError } from "@/server/modules/shared/errors";
-import { requestGuideInputSchema } from "@/server/modules/guide-leads/guide-leads.schema";
+import { guideProfileInputSchema, requestGuideInputSchema } from "@/server/modules/guide-leads/guide-leads.schema";
 import * as guideLeadsService from "@/server/modules/guide-leads/guide-leads.service";
 
 const RATE_LIMIT = 8;
@@ -34,14 +35,31 @@ export async function request(request: Request) {
   }
 }
 
+// Optional second step. The token from step one proves which lead this is.
+export async function profile(request: Request) {
+  if (isRateLimited(`waec-guide-profile:${getClientIp(request)}`, RATE_LIMIT * 4, RATE_WINDOW_MS)) {
+    return fail("Too many requests from this network. Please try again in a few minutes.", 429);
+  }
+
+  try {
+    const input = guideProfileInputSchema.parse(await request.json());
+    await guideLeadsService.saveGuideProfile(input);
+    return ok({ ok: true });
+  } catch (error) {
+    if (error instanceof SyntaxError) return fail("Invalid request body.", 400);
+    return handleError(error, "Could not save your answers. Please try again.");
+  }
+}
+
 export async function download(request: Request) {
   const { origin, searchParams } = new URL(request.url);
-  const expired = NextResponse.redirect(new URL("/waec-guide?link=expired", origin));
+  const expired = NextResponse.redirect(new URL("/study-abroad-review?link=expired", origin));
 
   const token = searchParams.get("t");
   if (!token) return expired;
 
   try {
+    if (!isGuideAvailable()) return expired;
     const url = await guideLeadsService.resolveGuideDownload(token);
     return url ? NextResponse.redirect(url) : expired;
   } catch (error) {
@@ -87,6 +105,12 @@ export async function listAdmin(request: Request) {
         "Email",
         "WhatsApp",
         "Stage",
+        "Qualification",
+        "Field of study",
+        "Country",
+        "Intake",
+        "Funding",
+        "Profile completed",
         "Source",
         "Downloads",
         "Last download",
@@ -98,6 +122,12 @@ export async function listAdmin(request: Request) {
           lead.email,
           lead.whatsapp,
           lead.stage,
+          lead.qualification,
+          lead.fieldOfStudy,
+          lead.country,
+          lead.intake,
+          lead.funding,
+          lead.profileCompletedAt,
           lead.source,
           lead.downloadCount,
           lead.lastDownloadAt,

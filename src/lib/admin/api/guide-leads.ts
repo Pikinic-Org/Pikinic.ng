@@ -6,6 +6,12 @@ export type GuideLeadRow = {
   email: string;
   whatsapp: string;
   stage: string;
+  qualification: string | null;
+  fieldOfStudy: string | null;
+  country: string | null;
+  intake: string | null;
+  funding: string | null;
+  profileCompletedAt: string | null;
   source: string;
   downloadCount: number;
   lastDownloadAt: string | null;

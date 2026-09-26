@@ -6,20 +6,19 @@ import { GuideForm } from "@/components/waec-guide/guide-form";
 import { GUIDE_DEFAULT_SOURCE, GUIDE_SOURCE_PATTERN } from "@/lib/guide-options";
 
 export const metadata: Metadata = {
-  title: "Free WAEC guide: can you study abroad with your result?",
+  title: "Free study abroad review",
   description:
-    "The complete guide for Nigerian students and parents: which countries accept WAEC, what grades you need, what to do if yours are not strong enough, and how to start.",
+    "Tell us where you are and we'll message you on WhatsApp within 24 hours to plan your next step. A free study abroad review with Pikinic. Zero fees to students, always.",
 };
 
 const inside = [
-  "Whether WAEC is accepted in the UK, Canada, USA, Australia and Europe",
-  "The grades each country expects",
-  "What to do if your grades are not strong enough",
-  "English test scores you need",
-  "A step-by-step plan from today to a submitted application",
+  "A review of your degree, your goals and your options",
+  "The countries, universities and intakes that fit you",
+  "What to prepare, including your English test and proof of funds",
+  "Scholarship and funding routes",
 ];
 
-export default async function WaecGuidePage({
+export default async function StudyAbroadReviewPage({
   searchParams,
 }: {
   searchParams: Promise<{ src?: string; link?: string }>;
@@ -33,11 +32,11 @@ export default async function WaecGuidePage({
         <ScrollReveal className="grid gap-12 md:grid-cols-2 md:gap-16">
           <div>
             <h1 className="text-4xl font-semibold leading-[1.02] tracking-tight text-text-primary sm:text-5xl md:text-6xl">
-              Can you study abroad with your <span className="text-green-700">WAEC</span>{" "}
-              <InlinePhoto src="/images/study-abroad.jpg" alt="A university building" /> result?
+              Your degree can take you <InlinePhoto src="/images/study-abroad.jpg" alt="A university building" />{" "}
+              <span className="text-green-700">abroad.</span>
             </h1>
             <p className="mt-6 max-w-md text-lg leading-relaxed text-text-secondary">
-              The complete guide for Nigerian students and parents. A clear, honest answer, and a plan to start.
+              Tell us where you are, and we&rsquo;ll message you on WhatsApp within 24 hours to plan your next step.
             </p>
 
             <ul className="mt-10 max-w-md space-y-4 border-t border-border-primary pt-8">

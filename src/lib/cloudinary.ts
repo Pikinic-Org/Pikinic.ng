@@ -42,14 +42,19 @@ export async function destroyImage(publicId: string): Promise<void> {
   await cloudinary.uploader.destroy(publicId);
 }
 
-// Where the free WAEC guide lives. It is uploaded once with
+// Where the optional WAEC guide bonus lives. It is uploaded once with
 // `pnpm guide:upload` as an *authenticated* asset, so it has no public URL:
-// the only way to fetch it is a signed link generated here.
-export const WAEC_GUIDE_PUBLIC_ID = process.env.WAEC_GUIDE_PUBLIC_ID || "pikinic-guides/waec-free-guide";
+// the only way to fetch it is a signed link generated here. The bonus is only
+// offered when WAEC_GUIDE_PUBLIC_ID is set on the host, so a deploy without the
+// PDF never shows a download button that leads nowhere.
+export const WAEC_GUIDE_PUBLIC_ID = process.env.WAEC_GUIDE_PUBLIC_ID;
+
+export const isGuideAvailable = () => Boolean(WAEC_GUIDE_PUBLIC_ID);
 
 /** A signed Cloudinary download link for the guide that stops working after `ttlSeconds`. */
 export function getGuideDownloadUrl(ttlSeconds = 300): string {
   ensureConfigured();
+  if (!WAEC_GUIDE_PUBLIC_ID) throw new Error("WAEC_GUIDE_PUBLIC_ID is not set.");
   return cloudinary.utils.private_download_url(WAEC_GUIDE_PUBLIC_ID, "pdf", {
     resource_type: "image",
     type: "authenticated",
