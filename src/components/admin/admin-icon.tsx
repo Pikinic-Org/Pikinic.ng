@@ -10,6 +10,7 @@ type AdminIconKey =
   | "booking"
   | "consultant"
   | "media"
+  | "guide"
   | "logout"
   | "plus"
   | "pencil"
@@ -76,6 +77,13 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="1.5" />
       <circle cx="8.5" cy="9.5" r="1.75" />
       <path d="M3 16l5-5 4 4 3-3 6 6" />
+    </>
+  ),
+  guide: (
+    <>
+      <path d="M6 3h9l4 4v14H6z" />
+      <path d="M15 3v4h4" />
+      <path d="M12 11v6M9.5 14.5 12 17l2.5-2.5" />
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" />,

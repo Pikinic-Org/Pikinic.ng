@@ -168,3 +168,27 @@ model TravelConsultant {
   createdAt                   DateTime                @default(now())
   updatedAt                   DateTime                @updatedAt
 }
+
+// People who asked for the free WAEC guide (talks, events, the /waec-guide
+// page). One row per email: a repeat request refreshes their answers but
+// keeps the original `source`, so the event that first reached them stays
+// credited. downloadCount/lastDownloadAt are bumped by the signed download
+// route, which is how the team sees who actually opened the guide.
+// The form is deliberately short (QR-code sign-ups); country, course and
+// intake are collected on the WhatsApp follow-up, not stored here.
+model GuideLead {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  whatsapp       String
+  stage          String
+  // Submitting the form is the consent: the page states that Pikinic may
+  // contact them, so this is true for every row the form creates.
+  consent        Boolean   @default(true)
+  source         String    @default("website")
+  zohoLeadId     String?
+  downloadCount  Int       @default(0)
+  lastDownloadAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}

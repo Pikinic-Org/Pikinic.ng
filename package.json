@@ -15,7 +15,8 @@
     "db:bookings:migrate": "prisma migrate dev --config=prisma.bookings.config.ts",
     "db:bookings:deploy": "prisma migrate deploy --config=prisma.bookings.config.ts",
     "db:bookings:status": "prisma migrate status --config=prisma.bookings.config.ts",
-    "db:bookings:studio": "prisma studio --config=prisma.bookings.config.ts"
+    "db:bookings:studio": "prisma studio --config=prisma.bookings.config.ts",
+    "guide:upload": "tsx scripts/upload-guide.ts"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

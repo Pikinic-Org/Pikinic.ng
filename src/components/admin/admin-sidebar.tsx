@@ -14,6 +14,7 @@ const navItems = [
   { href: "/admin/webinars", label: "Webinars", icon: "webinar" as const },
   { href: "/admin/bookings", label: "Bookings", icon: "booking" as const },
   { href: "/admin/consultants", label: "Travel Consultants", icon: "consultant" as const },
+  { href: "/admin/guide-leads", label: "Guide Leads", icon: "guide" as const },
   { href: "/admin/media", label: "Media", icon: "media" as const },
 ];
 
