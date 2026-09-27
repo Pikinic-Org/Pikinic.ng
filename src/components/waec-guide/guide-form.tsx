@@ -294,6 +294,11 @@ export function GuideForm({ source }: { source: string }) {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
+      {/* Honeypot: hidden from people and screen readers, bots fill it in. */}
+      <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" />
+      </div>
       {textField("name", "Full name", { type: "text", autoComplete: "name" })}
       {textField("email", "Email address", { type: "email", autoComplete: "email" })}
       {textField("whatsapp", "WhatsApp number", { type: "tel", inputMode: "tel", autoComplete: "tel" })}

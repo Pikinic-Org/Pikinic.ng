@@ -8,7 +8,10 @@ import { HttpError } from "@/server/modules/shared/errors";
 import { guideProfileInputSchema, requestGuideInputSchema } from "@/server/modules/guide-leads/guide-leads.schema";
 import * as guideLeadsService from "@/server/modules/guide-leads/guide-leads.service";
 
-const RATE_LIMIT = 8;
+// A conference hall shares one Wi-Fi network, and mobile carriers put many
+// phones behind one address, so a per-IP limit has to allow a whole room. Bots
+// are caught by the hidden "website" field instead (see request()).
+const RATE_LIMIT = 2000;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 const handleError = (error: unknown, fallbackMessage: string) => {
@@ -27,7 +30,13 @@ export async function request(request: Request) {
   }
 
   try {
-    const input = requestGuideInputSchema.parse(await request.json());
+    const raw = await request.json();
+    // Honeypot: real people never see this field, bots fill every input. Answer
+    // as if it worked so the bot moves on, but save nothing.
+    if (raw && typeof raw === "object" && "website" in raw && raw.website) {
+      return ok({ token: "", downloadPath: null }, 201);
+    }
+    const input = requestGuideInputSchema.parse(raw);
     return ok(await guideLeadsService.requestGuide(input), 201);
   } catch (error) {
     if (error instanceof SyntaxError) return fail("Invalid request body.", 400);
@@ -37,7 +46,7 @@ export async function request(request: Request) {
 
 // Optional second step. The token from step one proves which lead this is.
 export async function profile(request: Request) {
-  if (isRateLimited(`waec-guide-profile:${getClientIp(request)}`, RATE_LIMIT * 4, RATE_WINDOW_MS)) {
+  if (isRateLimited(`waec-guide-profile:${getClientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)) {
     return fail("Too many requests from this network. Please try again in a few minutes.", 429);
   }
 

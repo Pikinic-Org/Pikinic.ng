@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { createGuideToken, verifyGuideToken } from "@/lib/guide-token";
 import { getGuideDownloadUrl, isGuideAvailable } from "@/lib/cloudinary";
 import { createCrmLead, subscribeCampaignsContact } from "@/lib/zoho-crm";
@@ -24,27 +25,32 @@ function describe(input: RequestGuideInput) {
 export async function requestGuide(input: RequestGuideInput) {
   const lead = await guideLeadsRepository.upsertByEmail(input);
 
-  // Only create the CRM lead the first time we see this email.
-  if (!lead.zohoLeadId) {
-    const zohoLeadId = await createCrmLead({
-      name: input.name,
-      email: input.email,
-      phone: input.whatsapp,
-      leadSource: LEAD_SOURCE,
-      description: describe(input),
-    });
-    if (zohoLeadId) await guideLeadsRepository.setZohoLeadId(lead.id, zohoLeadId);
-  }
+  // Zoho runs after the response is sent. With a room of 1,500 people scanning
+  // at once, making each phone wait on Zoho would slow every sign-up, and
+  // Zoho's own rate limits would fail some of them. The lead is already saved.
+  after(async () => {
+    // Only create the CRM lead the first time we see this email.
+    if (!lead.zohoLeadId) {
+      const zohoLeadId = await createCrmLead({
+        name: input.name,
+        email: input.email,
+        phone: input.whatsapp,
+        leadSource: LEAD_SOURCE,
+        description: describe(input),
+      });
+      if (zohoLeadId) await guideLeadsRepository.setZohoLeadId(lead.id, zohoLeadId);
+    }
 
-  const listKey = process.env.ZOHO_CAMPAIGNS_LIST_KEY_WAEC_GUIDE;
-  if (listKey) {
-    await subscribeCampaignsContact({
-      listKey,
-      name: input.name,
-      email: input.email,
-      source: `Study Abroad Review (${lead.source})`,
-    });
-  }
+    const listKey = process.env.ZOHO_CAMPAIGNS_LIST_KEY_WAEC_GUIDE;
+    if (listKey) {
+      await subscribeCampaignsContact({
+        listKey,
+        name: input.name,
+        email: input.email,
+        source: `Study Abroad Review (${lead.source})`,
+      });
+    }
+  });
 
   const token = createGuideToken(lead.id);
   return {
