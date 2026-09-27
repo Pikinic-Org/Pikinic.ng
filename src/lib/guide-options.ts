@@ -3,9 +3,11 @@
 // value is the label itself, which keeps the admin table and CSV readable.
 
 // Step one: where the person is right now. Ordered for the Growth Conference
-// audience (creatives, entrepreneurs, leaders), with the student and older
-// WAEC-era options kept so existing leads still match.
+// audience (working professionals first, the main paying audience, then
+// creatives, entrepreneurs, leaders), with the student and older WAEC-era
+// options kept so existing leads still match.
 export const guideStages = [
+  "Working professional",
   "Creative or freelancer",
   "Entrepreneur or business owner",
   "Leader or manager at work",
