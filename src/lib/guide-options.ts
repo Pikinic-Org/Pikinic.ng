@@ -2,10 +2,10 @@
 // and the API schema (server) so the two can never drift apart. The stored
 // value is the label itself, which keeps the admin table and CSV readable.
 
-// Step one: where the person is right now. Ordered for the Growth Conference
-// audience (working professionals first, the main paying audience, then
-// creatives, entrepreneurs, leaders), with the student and older WAEC-era
-// options kept so existing leads still match.
+// Step one: where the person is right now. Working professionals come first
+// (Pikinic's main paying audience company-wide), then the Growth Conference
+// options (creatives, entrepreneurs, leaders), with the student and older
+// WAEC-era options kept so existing leads still match.
 export const guideStages = [
   "Working professional",
   "Creative or freelancer",
