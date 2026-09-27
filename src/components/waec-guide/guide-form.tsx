@@ -331,7 +331,7 @@ export function GuideForm({ source }: { source: string }) {
       {status === "error" && <p className="text-sm text-red-600">{errorMessage}</p>}
 
       <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={status === "submitting"}>
-        {status === "submitting" ? "Sending…" : "Get my free review"}
+        {status === "submitting" ? "Sending…" : "Claim my Opportunity Pass"}
       </Button>
 
       <p className="text-xs leading-relaxed text-text-tertiary">

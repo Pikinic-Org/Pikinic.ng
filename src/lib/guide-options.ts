@@ -2,12 +2,16 @@
 // and the API schema (server) so the two can never drift apart. The stored
 // value is the label itself, which keeps the admin table and CSV readable.
 
-// Step one: where the person is right now. Ordered for a graduate audience,
-// with the older WAEC-era options kept so existing leads still match.
+// Step one: where the person is right now. Ordered for the Growth Conference
+// audience (creatives, entrepreneurs, leaders), with the student and older
+// WAEC-era options kept so existing leads still match.
 export const guideStages = [
-  "Current undergraduate",
+  "Creative or freelancer",
+  "Entrepreneur or business owner",
+  "Leader or manager at work",
   "University graduate (interested in a master's)",
   "NYSC corps member",
+  "Current undergraduate",
   "Current postgraduate student",
   "WAEC result in hand",
   "Current SS3 student",
