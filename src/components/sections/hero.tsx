@@ -30,33 +30,17 @@ export function Hero() {
       document.fonts.ready.then(() => ScrollTrigger.refresh());
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
-        // Headline reveals line by line from behind each line's mask.
-        gsap.from("[data-hero-line]", {
-          yPercent: 110,
-          duration: 1.1,
-          ease: "expo.out",
-          stagger: 0.12,
-          delay: 0.1,
-        });
-
-        // Then the last word flips through the outcomes on a loop.
+        // The headline and copy reveal in CSS (.hero-line / .reveal) so they
+        // start on first paint; once they've landed, the last word flips
+        // through the outcomes on a loop.
         const words = gsap.utils.toArray<HTMLElement>("[data-hero-word]");
         gsap.set(words.slice(1), { y: 0, yPercent: 110 });
-        const cycle = gsap.timeline({ repeat: -1, delay: 2 });
+        const cycle = gsap.timeline({ repeat: -1, delay: 1.5 });
         words.forEach((word, i) => {
           const next = words[(i + 1) % words.length];
           cycle
-            .to(word, { yPercent: -110, duration: 0.7, ease: "expo.inOut" }, "+=1.6")
-            .fromTo(next, { yPercent: 110 }, { yPercent: 0, duration: 0.7, ease: "expo.inOut" }, "<");
-        });
-
-        gsap.from("[data-hero-fade]", {
-          opacity: 0,
-          y: 16,
-          duration: 0.9,
-          ease: "power3.out",
-          stagger: 0.08,
-          delay: 0.45,
+            .to(word, { yPercent: -110, duration: 0.8, ease: "power3.inOut" }, "+=1.8")
+            .fromTo(next, { yPercent: 110 }, { yPercent: 0, duration: 0.8, ease: "power3.inOut" }, "<");
         });
 
         // The framed image opens to full bleed, then keeps pushing in slightly
@@ -93,17 +77,17 @@ export function Hero() {
           className="text-[clamp(2.5rem,5.5vw,5.75rem)] font-semibold leading-[0.98] tracking-tight"
         >
           <span aria-hidden className="block overflow-hidden pb-[0.08em]">
-            <span data-hero-line className="block">
+            <span className="hero-line block">
               We handle the journey.
             </span>
           </span>
           <span aria-hidden className="block overflow-hidden pb-[0.08em]">
-            <span data-hero-line className="block">
+            <span className="hero-line block [--line:1]">
               You enjoy the
             </span>
           </span>
           <span aria-hidden className="block overflow-hidden pb-[0.08em]">
-            <span data-hero-line className="grid text-green-700">
+            <span className="hero-line grid text-green-700 [--line:2]">
               {outcomes.map((word, i) => (
                 <span
                   key={word}
@@ -119,8 +103,7 @@ export function Hero() {
         </h1>
 
         <div
-          data-hero-fade
-          className="mt-8 flex max-w-sm flex-col gap-6 md:absolute md:bottom-14 md:right-10 md:mt-0 lg:right-16"
+          className="reveal [animation-delay:0.6s] mt-8 flex max-w-sm flex-col gap-6 md:absolute md:bottom-14 md:right-10 md:mt-0 lg:right-16"
         >
           <p className="text-base leading-relaxed text-text-secondary sm:text-lg">
             Flights, a place to stay, study abroad or your next big move. PiKiNiC is the team behind

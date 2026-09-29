@@ -150,6 +150,18 @@ h1, h2, h3, h4, h5, h6 {
   animation: fade-up-blur 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Hero headline — each line rises from behind its overflow mask. Plain CSS so
+   it starts on first paint instead of waiting for the JS bundle to hydrate.
+   --line sets the stagger. */
+@keyframes hero-line-rise {
+  from { transform: translateY(110%); }
+  to { transform: translateY(0); }
+}
+.hero-line {
+  animation: hero-line-rise 1.3s cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation-delay: calc(var(--line, 0) * 0.18s);
+}
+
 @keyframes pulse-dot {
   0% { box-shadow: 0 0 0 0 rgba(34, 122, 72, 0.45); }
   70% { box-shadow: 0 0 0 8px rgba(34, 122, 72, 0); }
@@ -224,6 +236,9 @@ html.custom-cursor-active * {
 
 @media (prefers-reduced-motion: reduce) {
   .pulse-dot {
+    animation: none !important;
+  }
+  .hero-line {
     animation: none !important;
   }
   .reveal,
