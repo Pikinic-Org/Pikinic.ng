@@ -9,7 +9,16 @@ const RATE_LIMIT = 5;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 export async function POST(request: Request) {
-  if (isRateLimited(`contact:${getClientIp(request)}`, RATE_LIMIT, RATE_WINDOW_MS)) {
+  // The Travel & Tours site relays its contact form through its own server, so
+  // every one of its submissions arrives from the same IP. When the shared
+  // proxy secret checks out, rate-limit on the visitor IP it forwards instead.
+  const proxySecret = process.env.FLIGHTS_PROXY_SECRET;
+  const fromTravels = !!proxySecret && request.headers.get("x-flights-proxy-secret") === proxySecret;
+  const clientIp = fromTravels
+    ? (request.headers.get("x-pikinic-client-ip") ?? "unknown")
+    : getClientIp(request);
+
+  if (isRateLimited(`contact:${clientIp}`, RATE_LIMIT, RATE_WINDOW_MS)) {
     return NextResponse.json(
       { error: "Too many submissions. Please try again later." },
       { status: 429 }
