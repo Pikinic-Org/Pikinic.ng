@@ -20,7 +20,7 @@ export default function FormsLayout({ children }: { children: ReactNode }) {
     <div>
       <AdminPageHeader title="Forms" description="Everyone who signed up through a form on the website." />
 
-      <nav className="-mt-2 mb-8 flex gap-2 border-b border-border-primary">
+      <nav className="-mt-2 mb-8 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border-primary [scrollbar-width:none] sm:gap-2 [&::-webkit-scrollbar]:hidden">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href);
           return (
@@ -28,7 +28,7 @@ export default function FormsLayout({ children }: { children: ReactNode }) {
               key={tab.href}
               href={tab.href}
               className={cn(
-                "-mb-px border-b-2 px-4 py-2.5 text-xs font-semibold uppercase tracking-widest transition-colors",
+                "shrink-0 whitespace-nowrap border-b-2 px-2.5 py-2.5 text-xs font-semibold uppercase tracking-wide transition-colors sm:px-4 sm:tracking-widest",
                 active
                   ? "border-green-700 text-text-primary"
                   : "border-transparent text-text-tertiary hover:text-text-secondary"

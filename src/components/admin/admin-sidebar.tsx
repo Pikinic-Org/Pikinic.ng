@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminIcon } from "@/components/admin/admin-icon";
@@ -28,18 +29,11 @@ function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function AdminSidebar() {
+function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-green-900 text-neutral-0">
-      <div className="relative flex h-20 shrink-0 items-center gap-2.5 px-6">
-        <Link href="/admin" className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
-          <LogoMark className="text-green-400" />
-          Pikinic <span className="text-green-400">Admin</span>
-        </Link>
-      </div>
-
+    <>
       <nav className="relative flex-1 space-y-1 overflow-y-auto px-4">
         {navItems.map((item) => {
           const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
@@ -47,6 +41,7 @@ export function AdminSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-[2px] px-3 py-2.5 text-sm font-semibold uppercase tracking-wide transition-colors",
                 active
@@ -64,12 +59,86 @@ export function AdminSidebar() {
       <div className="relative shrink-0 border-t border-neutral-0/15 p-4">
         <Link
           href="/admin/login"
+          onClick={onNavigate}
           className="flex items-center gap-3 rounded-[2px] px-3 py-2.5 text-sm font-semibold uppercase tracking-wide text-neutral-0/70 transition-colors hover:bg-neutral-0/10 hover:text-neutral-0"
         >
           <AdminIcon icon="logout" className="h-4 w-4 shrink-0" />
           Log Out
         </Link>
       </div>
-    </aside>
+    </>
+  );
+}
+
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
+  return (
+    <Link href="/admin" onClick={onNavigate} className="flex items-center gap-2.5 text-lg font-semibold tracking-tight">
+      <LogoMark className="text-green-400" />
+      Pikinic <span className="text-green-400">Admin</span>
+    </Link>
+  );
+}
+
+// Below lg the sidebar would squeeze the content, so phones and tablets get a
+// top bar with a menu button that slides the same navigation in as a drawer.
+export function AdminSidebar() {
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  return (
+    <>
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col overflow-hidden bg-green-900 text-neutral-0 lg:flex">
+        <div className="relative flex h-20 shrink-0 items-center gap-2.5 px-6">
+          <Brand />
+        </div>
+        <NavLinks />
+      </aside>
+
+      <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between bg-green-900 px-4 text-neutral-0 lg:hidden">
+        <Brand />
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open menu"
+          aria-expanded={open}
+          className="flex h-10 w-10 items-center justify-center rounded-[2px] text-neutral-0/80 hover:bg-neutral-0/10 hover:text-neutral-0"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" className="h-5 w-5" aria-hidden>
+            <path d="M4 7h16M4 12h16M4 17h16" />
+          </svg>
+        </button>
+      </header>
+
+      {open && (
+        <div className="fixed inset-0 z-40 lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <button type="button" aria-label="Close menu" onClick={close} className="absolute inset-0 bg-neutral-900/50" />
+          <aside className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col overflow-hidden bg-green-900 text-neutral-0">
+            <div className="relative flex h-16 shrink-0 items-center justify-between px-4">
+              <Brand onNavigate={close} />
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close menu"
+                className="flex h-10 w-10 items-center justify-center rounded-[2px] text-neutral-0/80 hover:bg-neutral-0/10 hover:text-neutral-0"
+              >
+                <AdminIcon icon="close" className="h-5 w-5" />
+              </button>
+            </div>
+            <NavLinks onNavigate={close} />
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

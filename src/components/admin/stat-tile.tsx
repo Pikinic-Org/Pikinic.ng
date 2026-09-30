@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 export function StatTileGrid({ children }: { children: ReactNode }) {
   return (
-    <dl className="grid grid-cols-1 border-l border-t border-border-primary sm:grid-cols-2 lg:grid-cols-4">
+    <dl className="grid grid-cols-2 border-l border-t border-border-primary lg:grid-cols-4">
       {children}
     </dl>
   );
@@ -21,13 +21,13 @@ export function StatTile({
   return (
     <div
       className={cn(
-        "relative flex h-32 flex-col justify-center gap-2 overflow-hidden border-b border-r border-border-primary px-6",
+        "relative flex h-24 flex-col justify-center gap-2 overflow-hidden border-b border-r border-border-primary px-4 sm:h-32 sm:px-6",
         accent ? "bg-green-800" : ""
       )}
     >
       <dd
         className={cn(
-          "relative text-3xl font-bold tracking-tight",
+          "relative text-2xl font-bold tracking-tight sm:text-3xl",
           accent ? "text-neutral-0" : "text-text-primary"
         )}
       >
