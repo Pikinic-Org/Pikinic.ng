@@ -20,13 +20,18 @@ export const getRegistrationFee = () => {
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_REGISTRATION_FEE_NGN;
 };
 
-// Shown after registering. Hidden until all three are set on the host, in
-// which case the page says the details will come on WhatsApp instead.
+// Placeholder so the payment screen can be previewed before the real account
+// is known. Set all three env vars on the host to replace it.
+const PLACEHOLDER = "xxxxxxxxx";
+
+// Shown after registering.
 export const getBankDetails = () => {
   const bankName = process.env.CONSULTANT_BANK_NAME?.trim();
   const accountNumber = process.env.CONSULTANT_ACCOUNT_NUMBER?.trim();
   const accountName = process.env.CONSULTANT_ACCOUNT_NAME?.trim();
-  return bankName && accountNumber && accountName ? { bankName, accountNumber, accountName } : null;
+  return bankName && accountNumber && accountName
+    ? { bankName, accountNumber, accountName }
+    : { bankName: PLACEHOLDER, accountNumber: PLACEHOLDER, accountName: PLACEHOLDER };
 };
 
 // The code people type into their transfer narration, e.g. TC-7K4PQ. No 0/O or
