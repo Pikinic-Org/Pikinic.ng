@@ -20,18 +20,20 @@ export const getRegistrationFee = () => {
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_REGISTRATION_FEE_NGN;
 };
 
-// Placeholder so the payment screen can be previewed before the real account
-// is known. Set all three env vars on the host to replace it.
-const PLACEHOLDER = "xxxxxxxxx";
+// The account registrants pay the training fee into. Setting all three env
+// vars on the host overrides it without a code change.
+const DEFAULT_BANK_DETAILS = {
+  bankName: "First Bank",
+  accountNumber: "2047254048",
+  accountName: "Pikinic Ng Limited",
+};
 
 // Shown after registering.
 export const getBankDetails = () => {
   const bankName = process.env.CONSULTANT_BANK_NAME?.trim();
   const accountNumber = process.env.CONSULTANT_ACCOUNT_NUMBER?.trim();
   const accountName = process.env.CONSULTANT_ACCOUNT_NAME?.trim();
-  return bankName && accountNumber && accountName
-    ? { bankName, accountNumber, accountName }
-    : { bankName: PLACEHOLDER, accountNumber: PLACEHOLDER, accountName: PLACEHOLDER };
+  return bankName && accountNumber && accountName ? { bankName, accountNumber, accountName } : DEFAULT_BANK_DETAILS;
 };
 
 // The code people type into their transfer narration, e.g. TC-7K4PQ. No 0/O or
