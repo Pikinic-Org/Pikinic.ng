@@ -4,6 +4,7 @@ import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import { isGuideAvailable } from "@/lib/cloudinary";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { csvResponse } from "@/server/modules/shared/csv";
 import { HttpError } from "@/server/modules/shared/errors";
 import { guideProfileInputSchema, requestGuideInputSchema } from "@/server/modules/guide-leads/guide-leads.schema";
 import * as guideLeadsService from "@/server/modules/guide-leads/guide-leads.service";
@@ -79,15 +80,6 @@ export async function download(request: Request) {
 
 // ---- Admin -----------------------------------------------------------------
 
-// CSV cells starting with = + - @ are executed as formulas by Excel/Sheets, so
-// a lead who typed one into a free-text field could attack whoever opens the
-// export. Prefixing a quote neutralises it.
-function csvCell(value: string | number | boolean | Date | null | undefined) {
-  let text = value instanceof Date ? value.toISOString() : String(value ?? "");
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-  return `"${text.replace(/"/g, '""')}"`;
-}
-
 // The export/purge window is "requested before this UTC date" (YYYY-MM-DD). The
 // admin page uses the same boundary to show how many leads a purge would remove.
 function parseBefore(value: string | null): Date | null | "invalid" {
@@ -125,8 +117,10 @@ export async function listAdmin(request: Request) {
         "Last download",
         "Requested",
       ];
-      const rows = leads.map((lead) =>
-        [
+      return csvResponse(
+        "waec-guide-leads",
+        header,
+        leads.map((lead) => [
           lead.name,
           lead.email,
           lead.whatsapp,
@@ -141,17 +135,8 @@ export async function listAdmin(request: Request) {
           lead.downloadCount,
           lead.lastDownloadAt,
           lead.createdAt,
-        ]
-          .map(csvCell)
-          .join(",")
+        ])
       );
-
-      return new NextResponse(["﻿" + header.map(csvCell).join(","), ...rows].join("\r\n"), {
-        headers: {
-          "Content-Type": "text/csv; charset=utf-8",
-          "Content-Disposition": `attachment; filename="waec-guide-leads-${new Date().toISOString().slice(0, 10)}.csv"`,
-        },
-      });
     }
 
     return ok(leads);

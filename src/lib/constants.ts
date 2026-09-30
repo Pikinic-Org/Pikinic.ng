@@ -16,13 +16,22 @@ export const directorContact = {
   email: "adeniyi@pikinic.ng",
 };
 
-// Details from the official training flyer. The slot count is marketing copy
-// only; registration is not capped.
-export const consultancyProgramme = {
-  dateLabel: "Saturday, 10 October 2026",
-  venue: "Alausa Shopping Mall, Ikeja, Lagos",
-  slotsLabel: "50 limited slots available",
+// Details from the "Travel Consultant 1" flyer in Figma. `code` is stored on
+// each sign-up so later cohorts can be told apart in the dashboard.
+export const consultantProgramme = {
+  code: "four-week-oct-2026",
+  label: "4-week online, from 9 Oct 2026",
+  scheduleLabel: "Every Friday, 7:00 PM",
+  startLabel: "Friday, 9 October 2026",
+  venue: "Online, on Google Meet",
+  // The number printed on the flyer for calls, WhatsApp and payment receipts.
+  whatsapp: siteConfig.phones[0],
 };
+
+// Sign-ups from the first programme (one-day, 10 Oct 2026, Ikeja) were saved
+// before cohorts were recorded, so they have no programme code.
+export const programmeLabel = (code: string | null) =>
+  code === consultantProgramme.code ? consultantProgramme.label : code ?? "One-day, 10 Oct 2026 (Ikeja)";
 
 // Instagram is confirmed (@pikinic). X, TikTok, and LinkedIn are still
 // placeholder handles — swap for the real profiles before launch.

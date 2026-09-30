@@ -1,6 +1,8 @@
+import { randomInt } from "node:crypto";
 import { Prisma } from "@/generated/prisma/client";
+import { consultantProgramme } from "@/lib/constants";
 import { HttpError } from "@/server/modules/shared/errors";
-import { getTransactionStatus, initiatePayment } from "@/server/modules/monnify/monnify.service";
+import { getTransactionStatus } from "@/server/modules/monnify/monnify.service";
 import { consultantsRepository } from "@/server/modules/consultants/consultants.repository";
 import {
   consultantReviewUpdateSchema,
@@ -18,97 +20,108 @@ export const getRegistrationFee = () => {
   return Number.isInteger(configured) && configured > 0 ? configured : DEFAULT_REGISTRATION_FEE_NGN;
 };
 
-// Reference shape: TC-<consultantId>-<attempt>. Ids are cuids (no hyphens), so
-// the id can always be recovered from a reference even after a newer payment
-// attempt has replaced the one stored on the row.
-const buildPaymentReference = (id: string) => `${CONSULTANT_PAYMENT_PREFIX}${id}-${Date.now().toString(36)}`;
+// Shown after registering. Hidden until all three are set on the host, in
+// which case the page says the details will come on WhatsApp instead.
+export const getBankDetails = () => {
+  const bankName = process.env.CONSULTANT_BANK_NAME?.trim();
+  const accountNumber = process.env.CONSULTANT_ACCOUNT_NUMBER?.trim();
+  const accountName = process.env.CONSULTANT_ACCOUNT_NAME?.trim();
+  return bankName && accountNumber && accountName ? { bankName, accountNumber, accountName } : null;
+};
+
+// The code people type into their transfer narration, e.g. TC-7K4PQ. No 0/O or
+// 1/I, so it survives being read out or retyped.
+const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const buildPaymentCode = () =>
+  `TC-${Array.from({ length: 5 }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join("")}`;
 
 const consultantIdFromReference = (paymentReference: string) =>
   paymentReference.slice(CONSULTANT_PAYMENT_PREFIX.length, paymentReference.lastIndexOf("-"));
 
 type Consultant = NonNullable<Awaited<ReturnType<typeof consultantsRepository.findById>>>;
 
-// Payment is always re-verified against Monnify's own API — the webhook and
-// the browser-return poll are only triggers, never trusted as proof of payment.
-// `attempt` lets the webhook settle a specific (possibly older) payment attempt.
+const isUniqueViolation = (error: unknown, field: string) =>
+  error instanceof Prisma.PrismaClientKnownRequestError &&
+  error.code === "P2002" &&
+  JSON.stringify(error.meta ?? {}).includes(field);
+
+// One registration per email. Someone who registers again before paying keeps
+// their row and payment code, with their details refreshed, so a second scan
+// of the QR code never creates a duplicate or a second code to chase.
+export const registerForBankTransfer = async (input: unknown) => {
+  const data = registerConsultantInputSchema.parse(input);
+  const amount = getRegistrationFee();
+
+  const existing = await consultantsRepository.findByEmail(data.email);
+  if (existing?.paymentStatus === "paid") {
+    throw new HttpError(
+      "This email is already registered and paid. Message us on WhatsApp if you need anything.",
+      409
+    );
+  }
+
+  let consultant: Consultant | null = null;
+  if (existing) {
+    consultant = await consultantsRepository.update(existing.id, {
+      ...data,
+      amount,
+      programme: consultantProgramme.code,
+      paymentCode: existing.paymentCode ?? buildPaymentCode(),
+    });
+  } else {
+    // A clash on the random code is rare but possible, so retry with a new one.
+    for (let attempt = 0; attempt < 5 && !consultant; attempt++) {
+      try {
+        consultant = await consultantsRepository.create({
+          ...data,
+          amount,
+          programme: consultantProgramme.code,
+          paymentCode: buildPaymentCode(),
+        });
+      } catch (error) {
+        if (isUniqueViolation(error, "paymentCode")) continue;
+        // Two submissions with the same new email raced; the other one won.
+        if (isUniqueViolation(error, "email")) {
+          consultant = await consultantsRepository.findByEmail(data.email);
+          break;
+        }
+        throw error;
+      }
+    }
+  }
+
+  if (!consultant?.paymentCode) throw new HttpError("Could not complete your registration. Please try again.", 500);
+
+  return {
+    firstName: consultant.fullName.split(/\s+/)[0],
+    fullName: consultant.fullName,
+    paymentCode: consultant.paymentCode,
+    amount: consultant.amount,
+  };
+};
+
+// Payment is always re-verified against Monnify's own API — the webhook is
+// only a trigger, never trusted as proof of payment. Kept for registrations
+// made through the earlier Monnify checkout.
 const settlePayment = async (
   consultant: Consultant,
-  attempt: { paymentReference: string; transactionReference: string } | null = null
+  attempt: { paymentReference: string; transactionReference: string }
 ) => {
   if (consultant.paymentStatus === "paid") return consultant;
 
-  const transactionReference = attempt?.transactionReference ?? consultant.monnifyTransactionReference;
-  if (!transactionReference) return consultant;
-
-  const payment = await getTransactionStatus(transactionReference);
+  const payment = await getTransactionStatus(attempt.transactionReference);
   const fullyPaid = payment.paymentStatus === "PAID" && Number(payment.amountPaid) >= consultant.amount;
   if (!fullyPaid) return consultant;
 
   // A transaction can only settle the registration its own reference names.
-  if (attempt && payment.paymentReference && payment.paymentReference !== attempt.paymentReference) return consultant;
+  if (payment.paymentReference && payment.paymentReference !== attempt.paymentReference) return consultant;
 
   return consultantsRepository.update(consultant.id, {
     paymentStatus: "paid",
     paidAt: new Date(),
-    paymentReference: attempt?.paymentReference ?? consultant.paymentReference,
-    monnifyTransactionReference: transactionReference,
+    paymentReference: attempt.paymentReference,
+    monnifyTransactionReference: attempt.transactionReference,
   });
-};
-
-// One registration per email. Re-submitting with an email that hasn't paid
-// reuses the same row (replacing its details) and starts a fresh payment
-// attempt, so abandoned checkouts are recoverable without duplicate rows.
-export const registerConsultant = async (input: unknown, siteOrigin: string) => {
-  const data = registerConsultantInputSchema.parse(input);
-  const amount = getRegistrationFee();
-
-  let existing = await consultantsRepository.findByEmail(data.email);
-
-  // The previous attempt may have been paid without us knowing yet (delayed
-  // webhook, or no webhook in local dev). Check before opening a second one,
-  // so nobody is asked to pay twice.
-  if (existing && existing.paymentStatus !== "paid") existing = await settlePayment(existing);
-
-  if (existing?.paymentStatus === "paid") {
-    throw new HttpError("This email is already registered as a travel consultant.", 409);
-  }
-
-  let consultant: Consultant;
-  try {
-    consultant = existing
-      ? await consultantsRepository.update(existing.id, { ...data, amount })
-      : await consultantsRepository.create({ ...data, amount });
-  } catch (error) {
-    // Two submissions with the same new email raced; the unique index on email
-    // let exactly one of them create the row.
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      throw new HttpError("A registration for this email is already in progress. Please try again.", 409);
-    }
-    throw error;
-  }
-
-  const paymentReference = buildPaymentReference(consultant.id);
-  const payment = await initiatePayment({
-    amount,
-    customerName: data.fullName,
-    customerEmail: data.email,
-    paymentReference,
-    redirectUrl: `${siteOrigin}/travel-consultancy/confirmation?id=${consultant.id}`,
-    currencyCode: consultant.currency,
-  });
-
-  await consultantsRepository.update(consultant.id, {
-    paymentReference,
-    monnifyTransactionReference: payment.transactionReference,
-  });
-
-  return { id: consultant.id, checkoutUrl: payment.checkoutUrl as string };
-};
-
-export const confirmPaymentById = async (id: string) => {
-  const consultant = await consultantsRepository.findById(id);
-  if (!consultant) throw new HttpError("Registration not found.", 404);
-  return settlePayment(consultant);
 };
 
 // Called from the Monnify webhook. Looks the registration up by the id embedded
@@ -120,21 +133,26 @@ export const confirmPaymentByReference = async (paymentReference: string, transa
   return settlePayment(consultant, { paymentReference, transactionReference });
 };
 
-// Public-safe view for the post-checkout page: no contact details, since the
-// id in the URL is the only thing gating it.
-export const getRegistrationStatus = async (id: string) => {
-  const consultant = await confirmPaymentById(id);
-  return {
-    paymentStatus: consultant.paymentStatus,
-    firstName: consultant.fullName.split(/\s+/)[0],
-  };
-};
-
 export const listConsultants = () => consultantsRepository.list();
 
 export const getConsultantById = (id: string) => consultantsRepository.findById(id);
 
-export const updateConsultantReview = (id: string, input: unknown) =>
-  consultantsRepository.update(id, consultantReviewUpdateSchema.parse(input));
+// paidAt follows the payment status, so marking someone paid by mistake and
+// undoing it leaves no stale date behind.
+export const updateConsultantReview = async (id: string, input: unknown) => {
+  const { paymentStatus, ...rest } = consultantReviewUpdateSchema.parse(input);
+  const data: Prisma.TravelConsultantUpdateInput = { ...rest };
+
+  if (paymentStatus) {
+    const consultant = await consultantsRepository.findById(id);
+    if (!consultant) throw new HttpError("Travel consultant not found.", 404);
+    if (paymentStatus !== consultant.paymentStatus) {
+      data.paymentStatus = paymentStatus;
+      data.paidAt = paymentStatus === "paid" ? new Date() : null;
+    }
+  }
+
+  return consultantsRepository.update(id, data);
+};
 
 export const deleteConsultant = (id: string) => consultantsRepository.delete(id);

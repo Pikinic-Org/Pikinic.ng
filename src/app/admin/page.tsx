@@ -131,10 +131,10 @@ export default function AdminOverviewPage() {
             </div>
           </div>
           <Link
-            href="/admin/consultants"
+            href="/admin/forms/travel-consultant"
             className="mt-5 inline-block text-xs font-semibold uppercase tracking-widest text-green-700 hover:text-green-800"
           >
-            View all consultants →
+            View all registrations →
           </Link>
         </div>
 

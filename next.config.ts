@@ -34,6 +34,18 @@ const nextConfig: NextConfig = {
     // 90 is for the full-bleed hero photo, which shows compression at 75.
     qualities: [75, 90],
   },
+  // Temporary (307), not permanent: browsers cache 308s for good, which would
+  // make it hard to bring any of these paths back later.
+  async redirects() {
+    return [
+      // The first programme's page. Old links and flyers land on the new one.
+      { source: "/travel-consultancy/:path*", destination: "/travel-consultant", permanent: false },
+      // Both sign-up tables now live under Forms in the dashboard.
+      { source: "/admin/consultants", destination: "/admin/forms/travel-consultant", permanent: false },
+      { source: "/admin/consultants/:id", destination: "/admin/forms/travel-consultant/:id", permanent: false },
+      { source: "/admin/guide-leads", destination: "/admin/forms/growth-conference", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

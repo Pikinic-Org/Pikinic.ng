@@ -164,6 +164,8 @@ export type TravelConsultant = {
   city: string;
   motivation: string | null;
   referralSource: string | null;
+  programme: string | null;
+  paymentCode: string | null;
   paymentStatus: ConsultantPaymentStatus;
   reviewStatus: ConsultantReviewStatus;
   amount: number;

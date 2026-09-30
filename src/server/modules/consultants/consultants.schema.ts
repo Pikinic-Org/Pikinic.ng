@@ -27,6 +27,8 @@ export const registerConsultantInputSchema = z.object({
 export type RegisterConsultantInput = z.infer<typeof registerConsultantInputSchema>;
 
 export const consultantReviewUpdateSchema = z.object({
+  // Set by hand once a bank transfer shows up in the account.
+  paymentStatus: z.enum(["pending", "paid"]).optional(),
   reviewStatus: z.enum(["registered", "attended", "internship"]).optional(),
   adminNotes: z
     .string()

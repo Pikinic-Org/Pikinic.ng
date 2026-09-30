@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AdminPageHeader } from "@/components/admin/page-header";
 import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-table";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { StatTile, StatTileGrid } from "@/components/admin/stat-tile";
@@ -153,10 +152,10 @@ export default function GuideLeadsPage() {
 
   return (
     <div>
-      <AdminPageHeader
-        title="Guide Leads"
-        description="People who asked for a free study abroad review, from talks, events and the website."
-      />
+      <p className="mb-6 max-w-2xl text-sm text-text-secondary">
+        People who claimed an Opportunity Pass (a free study abroad review) at the Growth Conference, other events and
+        on the website. Filter by source to see one event.
+      </p>
 
       {error && <p className="mb-4 text-sm text-red-600">{error}</p>}
       {notice && <p className="mb-4 text-sm text-green-700">{notice}</p>}

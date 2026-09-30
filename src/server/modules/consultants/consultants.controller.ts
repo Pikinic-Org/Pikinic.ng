@@ -2,10 +2,15 @@ import { ZodError } from "zod";
 import { ok, fail, failFromError } from "@/lib/api-response";
 import { requireAdminSession } from "@/lib/auth/session";
 import { getClientIp, isRateLimited } from "@/lib/rate-limit";
+import { programmeLabel } from "@/lib/constants";
+import { csvResponse } from "@/server/modules/shared/csv";
 import { HttpError } from "@/server/modules/shared/errors";
 import * as consultantsService from "@/server/modules/consultants/consultants.service";
 
-const RATE_LIMIT = 5;
+// Sign-ups come from a flyer QR code, and people sharing a Wi-Fi network or a
+// mobile carrier share one IP, so this allows a room's worth. The hidden
+// "website" field catches bots.
+const RATE_LIMIT = 100;
 const RATE_WINDOW_MS = 10 * 60 * 1000;
 
 const handleError = (error: unknown, fallbackMessage: string) => {
@@ -23,32 +28,65 @@ export async function register(request: Request) {
 
   try {
     const body = await request.json();
-    const result = await consultantsService.registerConsultant(body, new URL(request.url).origin);
-    return ok(result, 201);
+    // Honeypot: answer as if it worked so the bot moves on, but save nothing.
+    if (body && typeof body === "object" && "website" in body && body.website) {
+      return ok({ firstName: "", fullName: "", paymentCode: "", amount: 0 }, 201);
+    }
+    return ok(await consultantsService.registerForBankTransfer(body), 201);
   } catch (error) {
+    if (error instanceof SyntaxError) return fail("Invalid request body.", 400);
     return handleError(error, "Could not complete your registration.");
-  }
-}
-
-export async function status(request: Request) {
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id) return fail("id query param is required.", 400);
-
-  try {
-    return ok(await consultantsService.getRegistrationStatus(id));
-  } catch (error) {
-    return handleError(error, "Could not check your payment status.");
   }
 }
 
 // ---- Admin -----------------------------------------------------------------
 
-export async function listAdmin() {
+export async function listAdmin(request: Request) {
   const session = await requireAdminSession();
   if (!session) return fail("Unauthorized.", 401);
 
   try {
-    return ok(await consultantsService.listConsultants());
+    const consultants = await consultantsService.listConsultants();
+
+    if (new URL(request.url).searchParams.get("format") === "csv") {
+      return csvResponse(
+        "travel-consultants",
+        [
+          "Name",
+          "Email",
+          "WhatsApp",
+          "City",
+          "Programme",
+          "Payment code",
+          "Payment",
+          "Amount (NGN)",
+          "Paid at",
+          "Stage",
+          "Notes from applicant",
+          "Heard about us via",
+          "Internal notes",
+          "Registered",
+        ],
+        consultants.map((c) => [
+          c.fullName,
+          c.email,
+          c.whatsapp,
+          c.city,
+          programmeLabel(c.programme),
+          c.paymentCode,
+          c.paymentStatus,
+          c.amount,
+          c.paidAt,
+          c.reviewStatus,
+          c.motivation,
+          c.referralSource,
+          c.adminNotes,
+          c.createdAt,
+        ])
+      );
+    }
+
+    return ok(consultants);
   } catch (error) {
     return handleError(error, "Could not load travel consultants.");
   }

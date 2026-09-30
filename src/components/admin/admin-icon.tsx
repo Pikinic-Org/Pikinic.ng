@@ -8,9 +8,8 @@ type AdminIconKey =
   | "package"
   | "webinar"
   | "booking"
-  | "consultant"
+  | "forms"
   | "media"
-  | "guide"
   | "logout"
   | "plus"
   | "pencil"
@@ -65,11 +64,11 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <path d="M8 13.5l2 2 4-4.5" />
     </>
   ),
-  consultant: (
+  forms: (
     <>
-      <circle cx="9" cy="8" r="3.25" />
-      <path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" />
-      <path d="M16 5.5a3 3 0 0 1 0 5.5M18 14.5c1.9.8 3 2.6 3 5.5" />
+      <rect x="5" y="4" width="14" height="17" rx="1.5" />
+      <path d="M9 2.5h6v3H9z" />
+      <path d="M8.5 11h7M8.5 15h5" />
     </>
   ),
   media: (
@@ -77,13 +76,6 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <rect x="3" y="4" width="18" height="16" rx="1.5" />
       <circle cx="8.5" cy="9.5" r="1.75" />
       <path d="M3 16l5-5 4 4 3-3 6 6" />
-    </>
-  ),
-  guide: (
-    <>
-      <path d="M6 3h9l4 4v14H6z" />
-      <path d="M15 3v4h4" />
-      <path d="M12 11v6M9.5 14.5 12 17l2.5-2.5" />
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
