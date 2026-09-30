@@ -95,15 +95,25 @@ function PaymentRow({ label, value, copy, children }: { label: string; value?: s
 }
 
 // Shown once the sign-up is saved. Until a payment gateway is live, people pay
-// by bank transfer with their code in the narration, send the receipt on
-// WhatsApp, and the team marks them paid in the dashboard.
+// by bank transfer with their code in the narration and send proof of payment
+// on WhatsApp. The team marks them paid in the dashboard, adds them to the
+// updates group and sends the Google Meet link by email or WhatsApp.
+const nextSteps = (hasBankDetails: boolean) => [
+  hasBankDetails
+    ? "Pay by bank transfer and put your payment code in the transfer description (narration)."
+    : "We'll send you the account details on WhatsApp. When you pay, put your payment code in the transfer description (narration).",
+  "Send us your proof of payment on WhatsApp so we can confirm it.",
+  "Once it's confirmed, we'll add you to the WhatsApp group for updates.",
+  "We'll send you the Google Meet link by email or WhatsApp, the day before or on the morning of the training.",
+];
+
 function PaymentStep({ registration, bankDetails }: { registration: Registration; bankDetails: BankDetails | null }) {
   const amount = naira.format(registration.amount);
   const message = [
     `Hi Pikinic, I've registered for the Travel Consultant training.`,
     `Name: ${registration.fullName}`,
     `Payment code: ${registration.paymentCode}`,
-    bankDetails ? `I've paid ${amount}. Here is my receipt.` : `Please send me the payment details.`,
+    bankDetails ? `I've paid ${amount}. Here is my proof of payment.` : `Please send me the payment details.`,
   ].join("\n");
   const whatsappHref = `https://wa.me/${consultantProgramme.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`;
 
@@ -125,9 +135,7 @@ function PaymentStep({ registration, bankDetails }: { registration: Registration
         You&rsquo;re registered, <span className="text-green-700">{registration.firstName}.</span>
       </h2>
       <p className="mt-3 text-base leading-relaxed text-text-secondary">
-        {bankDetails
-          ? `Your place is confirmed once we receive your ${amount} payment.`
-          : `We'll message you on WhatsApp with the payment details. Your place is confirmed once we receive your ${amount} payment.`}
+        Your place is confirmed once we receive your {amount} payment.
       </p>
 
       <dl className="mt-8 divide-y divide-border-primary border-y border-border-primary">
@@ -144,11 +152,17 @@ function PaymentStep({ registration, bankDetails }: { registration: Registration
         )}
       </dl>
 
-      <p className="mt-6 text-sm leading-relaxed text-text-secondary">
-        {bankDetails
-          ? "Put your payment code in the transfer description (narration) so we can match it to you. Then send us your receipt."
-          : "Keep your payment code. Put it in the transfer description (narration) when you pay, so we can match it to you."}
-      </p>
+      <h3 className="mt-8 text-base font-semibold text-text-primary">What happens next</h3>
+      <ol className="mt-3 space-y-3">
+        {nextSteps(bankDetails !== null).map((step, index) => (
+          <li key={step} className="flex gap-3 text-sm leading-relaxed text-text-secondary">
+            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-xs font-semibold text-green-700">
+              {index + 1}
+            </span>
+            {step}
+          </li>
+        ))}
+      </ol>
 
       {/* Plain anchor, not Button: wa.me is external and must open in a new tab. */}
       <a
@@ -157,7 +171,7 @@ function PaymentStep({ registration, bankDetails }: { registration: Registration
         rel="noreferrer noopener"
         className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-green-500 px-6 text-base font-medium text-neutral-900 transition-colors hover:bg-green-400"
       >
-        {bankDetails ? "Send my receipt on WhatsApp" : "Message us on WhatsApp"}
+        {bankDetails ? "Send proof of payment on WhatsApp" : "Message us on WhatsApp"}
       </a>
     </div>
   );
