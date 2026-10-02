@@ -63,14 +63,17 @@ export async function profile(request: Request) {
 
 export async function download(request: Request) {
   const { origin, searchParams } = new URL(request.url);
-  const expired = NextResponse.redirect(new URL("/study-abroad-review?link=expired", origin));
+  const file = searchParams.get("file") === "brochure" ? "brochure" : "guide";
+  const expired = NextResponse.redirect(
+    new URL(file === "brochure" ? "/waec?link=expired" : "/study-abroad-review?link=expired", origin)
+  );
 
   const token = searchParams.get("t");
   if (!token) return expired;
 
   try {
-    if (!isGuideAvailable()) return expired;
-    const url = await guideLeadsService.resolveGuideDownload(token);
+    if (!isGuideAvailable(file)) return expired;
+    const url = await guideLeadsService.resolveGuideDownload(token, file);
     return url ? NextResponse.redirect(url) : expired;
   } catch (error) {
     console.error("Guide download error:", error);

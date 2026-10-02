@@ -198,12 +198,50 @@ function ProfileStep({ token, downloadPath }: { token: string; downloadPath: str
   );
 }
 
-export function GuideForm({ source }: { source: string }) {
+// Shown on /waec instead of the Opportunity Pass step. The lead is already
+// saved; if the brochure file is not uploaded yet, we say we will send it.
+function BrochureSuccess({ brochurePath }: { brochurePath: string | null }) {
+  return (
+    <div className="rounded-2xl bg-surface-primary p-8 md:p-10">
+      <div className="flex size-12 items-center justify-center rounded-full bg-green-500/15 text-green-700">
+        <CheckIcon className="size-6" />
+      </div>
+      <h2 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-text-primary">
+        Your brochure is <span className="text-green-700">ready.</span>
+      </h2>
+      {brochurePath ? (
+        <>
+          <p className="mt-3 text-base leading-relaxed text-text-secondary">
+            Tap the button to download the PiKiNiC WAEC brochure.
+          </p>
+          {/* A plain anchor, not next/link: prefetching would hit the download route and count as a download. */}
+          <a
+            href={brochurePath}
+            className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-green-700 px-8 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+          >
+            Download the brochure
+          </a>
+        </>
+      ) : (
+        <p className="mt-3 text-base leading-relaxed text-text-secondary">
+          We have your details. We&rsquo;ll send the PiKiNiC WAEC brochure to you on WhatsApp shortly.
+        </p>
+      )}
+      <p className="mt-8 border-t border-border-primary pt-6 text-sm leading-relaxed text-text-secondary">
+        Want advice on which university fits you? We&rsquo;ll also message you on WhatsApp to offer a free one-on-one
+        consultation.
+      </p>
+    </div>
+  );
+}
+
+export function GuideForm({ source, variant = "review" }: { source: string; variant?: "review" | "brochure" }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [token, setToken] = useState("");
   const [downloadPath, setDownloadPath] = useState<string | null>(null);
+  const [brochurePath, setBrochurePath] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
 
@@ -249,6 +287,7 @@ export function GuideForm({ source }: { source: string }) {
 
       setToken(body.token);
       setDownloadPath(body.downloadPath ?? null);
+      setBrochurePath(body.brochurePath ?? null);
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -256,7 +295,13 @@ export function GuideForm({ source }: { source: string }) {
     }
   }
 
-  if (status === "success") return <ProfileStep token={token} downloadPath={downloadPath} />;
+  if (status === "success") {
+    return variant === "brochure" ? (
+      <BrochureSuccess brochurePath={brochurePath} />
+    ) : (
+      <ProfileStep token={token} downloadPath={downloadPath} />
+    );
+  }
 
   const fieldState = (field: FieldKey) => {
     if (!touched[field]) return "default" as const;
@@ -331,7 +376,7 @@ export function GuideForm({ source }: { source: string }) {
       {status === "error" && <p className="text-sm text-red-600">{errorMessage}</p>}
 
       <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={status === "submitting"}>
-        {status === "submitting" ? "Sending…" : "Claim my Opportunity Pass"}
+        {status === "submitting" ? "Sending…" : variant === "brochure" ? "Get the brochure" : "Claim my Opportunity Pass"}
       </Button>
 
       <p className="text-xs leading-relaxed text-text-tertiary">

@@ -1,6 +1,6 @@
 import { after } from "next/server";
 import { createGuideToken, verifyGuideToken } from "@/lib/guide-token";
-import { getGuideDownloadUrl, isGuideAvailable } from "@/lib/cloudinary";
+import { getGuideDownloadUrl, isGuideAvailable, type GuideFile } from "@/lib/cloudinary";
 import { createCrmLead, subscribeCampaignsContact } from "@/lib/zoho-crm";
 import { guideLeadsRepository } from "@/server/modules/guide-leads/guide-leads.repository";
 import { HttpError } from "@/server/modules/shared/errors";
@@ -8,9 +8,13 @@ import type { GuideProfileInput, RequestGuideInput } from "@/server/modules/guid
 
 const LEAD_SOURCE = "Study Abroad Review";
 
+const BROCHURE_SOURCE = "waec-brochure";
+
 function describe(input: RequestGuideInput) {
   return [
-    `Asked for a free study abroad review (source: ${input.source}).`,
+    input.source === BROCHURE_SOURCE
+      ? "Asked for the PiKiNiC WAEC brochure (UK universities that accept WAEC)."
+      : `Asked for a free study abroad review (source: ${input.source}).`,
     `Stage: ${input.stage}`,
     "Optional profile (qualification, field, country, intake, funding) is on the admin dashboard if they filled it in.",
   ].join("\n");
@@ -53,9 +57,12 @@ export async function requestGuide(input: RequestGuideInput) {
   });
 
   const token = createGuideToken(lead.id);
+  const link = (file: GuideFile) =>
+    isGuideAvailable(file) ? `/api/waec-guide/download?t=${encodeURIComponent(token)}&file=${file}` : null;
   return {
     token,
-    downloadPath: isGuideAvailable() ? `/api/waec-guide/download?t=${encodeURIComponent(token)}` : null,
+    downloadPath: link("guide"),
+    brochurePath: link("brochure"),
   };
 }
 
@@ -73,7 +80,7 @@ export async function saveGuideProfile(input: GuideProfileInput) {
  * Verifies a download token, counts the download, and returns a short-lived
  * Cloudinary link. Returns null for a bad, expired, or orphaned token.
  */
-export async function resolveGuideDownload(token: string): Promise<string | null> {
+export async function resolveGuideDownload(token: string, file: GuideFile = "guide"): Promise<string | null> {
   const leadId = verifyGuideToken(token);
   if (!leadId) return null;
 
@@ -81,7 +88,7 @@ export async function resolveGuideDownload(token: string): Promise<string | null
   if (!lead) return null;
 
   await guideLeadsRepository.recordDownload(lead.id);
-  return getGuideDownloadUrl();
+  return getGuideDownloadUrl(file);
 }
 
 export const listGuideLeads = (before?: Date) => guideLeadsRepository.list(before);

@@ -13,13 +13,18 @@ import { v2 as cloudinary } from "cloudinary";
 
 config({ path: ".env.local" });
 
-const PUBLIC_ID = process.env.WAEC_GUIDE_PUBLIC_ID || "pikinic-guides/waec-free-guide";
+// `--brochure` uploads the paid-offer brochure for /waec instead of the free guide.
+const isBrochure = process.argv.includes("--brochure");
+const PUBLIC_ID = isBrochure
+  ? process.env.WAEC_BROCHURE_PUBLIC_ID || "pikinic-guides/waec-brochure"
+  : process.env.WAEC_GUIDE_PUBLIC_ID || "pikinic-guides/waec-free-guide";
+const ENV_NAME = isBrochure ? "WAEC_BROCHURE_PUBLIC_ID" : "WAEC_GUIDE_PUBLIC_ID";
 const MAX_BYTES = 10 * 1024 * 1024; // Cloudinary's free-plan upload limit
 
 async function main() {
-  const file = process.argv[2];
+  const file = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
   if (!file || !existsSync(file)) {
-    console.error('Give the path to the PDF:  pnpm guide:upload "path/to/WAEC FREE GUIDE.pdf"');
+    console.error('Give the path to the PDF:  pnpm guide:upload [--brochure] "path/to/file.pdf"');
     process.exit(1);
   }
   if (!file.toLowerCase().endsWith(".pdf")) {
@@ -56,7 +61,7 @@ async function main() {
 
   console.log(`Uploaded ${(result.bytes / 1024 / 1024).toFixed(2)} MB as ${result.public_id} (${result.pages ?? "?"} pages).`);
   console.log("It is private: only signed links from /api/waec-guide/download can fetch it.");
-  console.log(`To offer the download on the site, set WAEC_GUIDE_PUBLIC_ID=${result.public_id} on your host and redeploy.`);
+  console.log(`To offer the download on the site, set ${ENV_NAME}=${result.public_id} on your host and redeploy.`);
 }
 
 main().catch((error) => {

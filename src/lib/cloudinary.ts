@@ -49,13 +49,23 @@ export async function destroyImage(publicId: string): Promise<void> {
 // PDF never shows a download button that leads nowhere.
 export const WAEC_GUIDE_PUBLIC_ID = process.env.WAEC_GUIDE_PUBLIC_ID;
 
-export const isGuideAvailable = () => Boolean(WAEC_GUIDE_PUBLIC_ID);
+// The PiKiNiC WAEC brochure (UK universities that accept WAEC) is stored the
+// same way, uploaded with `pnpm guide:upload --brochure`. It is offered on /waec
+// only when WAEC_BROCHURE_PUBLIC_ID is set on the host.
+export const WAEC_BROCHURE_PUBLIC_ID = process.env.WAEC_BROCHURE_PUBLIC_ID;
 
-/** A signed Cloudinary download link for the guide that stops working after `ttlSeconds`. */
-export function getGuideDownloadUrl(ttlSeconds = 300): string {
+export type GuideFile = "guide" | "brochure";
+
+const publicIdFor = (file: GuideFile) => (file === "brochure" ? WAEC_BROCHURE_PUBLIC_ID : WAEC_GUIDE_PUBLIC_ID);
+
+export const isGuideAvailable = (file: GuideFile = "guide") => Boolean(publicIdFor(file));
+
+/** A signed Cloudinary download link for a guide file that stops working after `ttlSeconds`. */
+export function getGuideDownloadUrl(file: GuideFile = "guide", ttlSeconds = 300): string {
   ensureConfigured();
-  if (!WAEC_GUIDE_PUBLIC_ID) throw new Error("WAEC_GUIDE_PUBLIC_ID is not set.");
-  return cloudinary.utils.private_download_url(WAEC_GUIDE_PUBLIC_ID, "pdf", {
+  const publicId = publicIdFor(file);
+  if (!publicId) throw new Error(`The ${file} public id is not set.`);
+  return cloudinary.utils.private_download_url(publicId, "pdf", {
     resource_type: "image",
     type: "authenticated",
     attachment: true,
