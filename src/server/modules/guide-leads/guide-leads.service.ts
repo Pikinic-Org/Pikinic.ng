@@ -62,7 +62,8 @@ export async function requestGuide(input: RequestGuideInput) {
   return {
     token,
     downloadPath: link("guide"),
-    brochurePath: link("brochure"),
+    // The brochure is paid: it is sent by hand once the transfer is confirmed.
+    brochurePath: null,
   };
 }
 
@@ -81,6 +82,8 @@ export async function saveGuideProfile(input: GuideProfileInput) {
  * Cloudinary link. Returns null for a bad, expired, or orphaned token.
  */
 export async function resolveGuideDownload(token: string, file: GuideFile = "guide"): Promise<string | null> {
+  // The brochure is paid, so a sign-up token must never unlock it.
+  if (file === "brochure") return null;
   const leadId = verifyGuideToken(token);
   if (!leadId) return null;
 

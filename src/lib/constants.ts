@@ -204,3 +204,12 @@ export const team: { name: string; role: string; photo?: string }[] = [
   { name: "Akintoye Adeniyi", role: "Director", photo: "/images/founder.png" },
   { name: "Akintoye Adepeju", role: "Admin" },
 ];
+
+// The paid WAEC brochure. Customers pay by bank transfer, then send the receipt
+// on WhatsApp; the team replies with the PDF once the payment is confirmed.
+export const brochureOffer = {
+  fullPriceNgn: 10_000,
+  eventPriceNgn: 5_000,
+  whatsapp: siteConfig.phones[0],
+  bank: { bankName: "First Bank", accountNumber: "2047254048", accountName: "Pikinic Ng Limited" },
+};

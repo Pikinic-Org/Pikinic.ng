@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { Container } from "@/components/ui/container";
 import { InlinePhoto } from "@/components/ui/inline-photo";
 import { ScrollReveal } from "@/components/ui/scroll-reveal";
@@ -59,7 +59,7 @@ export default async function WaecBrochurePage({ searchParams }: { searchParams:
               ))}
             </ul>
 
-            <p className="mt-8 text-sm text-text-secondary">Free for event attendees today.</p>
+            <p className="mt-8 text-sm text-text-secondary">50% off for event attendees: ₦5,000 instead of ₦10,000. Offer ends today.</p>
           </div>
 
           <div>

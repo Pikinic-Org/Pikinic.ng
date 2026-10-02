@@ -2,6 +2,7 @@
 
 import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
+import { brochureOffer } from "@/lib/constants";
 import {
   guideCountries,
   guideFunding,
@@ -200,33 +201,47 @@ function ProfileStep({ token, downloadPath }: { token: string; downloadPath: str
 
 // Shown on /waec instead of the Opportunity Pass step. The lead is already
 // saved; if the brochure file is not uploaded yet, we say we will send it.
-function BrochureSuccess({ brochurePath }: { brochurePath: string | null }) {
+// The brochure is paid. Details are already saved; the buyer transfers the
+// money and sends the receipt on WhatsApp, and the team replies with the PDF.
+function BrochureSuccess() {
+  const { eventPriceNgn, fullPriceNgn, bank, whatsapp } = brochureOffer;
+  const naira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
+  const message = encodeURIComponent("Hello Pikinic, I have paid for the WAEC brochure. My receipt is attached.");
   return (
     <div className="rounded-2xl bg-surface-primary p-8 md:p-10">
       <div className="flex size-12 items-center justify-center rounded-full bg-green-500/15 text-green-700">
         <CheckIcon className="size-6" />
       </div>
       <h2 className="mt-6 text-3xl font-semibold leading-tight tracking-tight text-text-primary">
-        Your brochure is <span className="text-green-700">ready.</span>
+        One last step: <span className="text-green-700">pay.</span>
       </h2>
-      {brochurePath ? (
-        <>
-          <p className="mt-3 text-base leading-relaxed text-text-secondary">
-            Tap the button to download the PiKiNiC WAEC brochure.
-          </p>
-          {/* A plain anchor, not next/link: prefetching would hit the download route and count as a download. */}
-          <a
-            href={brochurePath}
-            className="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-green-700 px-8 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
-          >
-            Download the brochure
-          </a>
-        </>
-      ) : (
-        <p className="mt-3 text-base leading-relaxed text-text-secondary">
-          We have your details. We&rsquo;ll send the PiKiNiC WAEC brochure to you on WhatsApp shortly.
-        </p>
-      )}
+      <p className="mt-3 text-base leading-relaxed text-text-secondary">
+        Transfer <strong className="text-text-primary">{naira(eventPriceNgn)}</strong>{" "}
+        <span className="line-through">{naira(fullPriceNgn)}</span> to the account below. Offer ends today.
+      </p>
+      <dl className="mt-6 space-y-3 rounded-xl border border-border-primary p-5 text-sm">
+        <div className="flex justify-between gap-4">
+          <dt className="text-text-secondary">Bank</dt>
+          <dd className="font-medium text-text-primary">{bank.bankName}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-text-secondary">Account number</dt>
+          <dd className="font-medium tabular-nums text-text-primary">{bank.accountNumber}</dd>
+        </div>
+        <div className="flex justify-between gap-4">
+          <dt className="text-text-secondary">Account name</dt>
+          <dd className="text-right font-medium text-text-primary">{bank.accountName}</dd>
+        </div>
+      </dl>
+      <p className="mt-6 text-base leading-relaxed text-text-secondary">
+        Then send your receipt on WhatsApp and we&rsquo;ll send the brochure to you.
+      </p>
+      <a
+        href={`https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${message}`}
+        className="mt-6 inline-flex h-12 items-center justify-center rounded-full bg-green-700 px-8 text-sm font-semibold text-white hover:bg-green-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700 focus-visible:ring-offset-2"
+      >
+        Send receipt on WhatsApp
+      </a>
       <p className="mt-8 border-t border-border-primary pt-6 text-sm leading-relaxed text-text-secondary">
         Want advice on which university fits you? We&rsquo;ll also message you on WhatsApp to offer a free one-on-one
         consultation.
@@ -241,7 +256,6 @@ export function GuideForm({ source, variant = "review" }: { source: string; vari
   const [errorMessage, setErrorMessage] = useState("");
   const [token, setToken] = useState("");
   const [downloadPath, setDownloadPath] = useState<string | null>(null);
-  const [brochurePath, setBrochurePath] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
 
@@ -287,7 +301,6 @@ export function GuideForm({ source, variant = "review" }: { source: string; vari
 
       setToken(body.token);
       setDownloadPath(body.downloadPath ?? null);
-      setBrochurePath(body.brochurePath ?? null);
       setStatus("success");
     } catch (error) {
       setStatus("error");
@@ -297,7 +310,7 @@ export function GuideForm({ source, variant = "review" }: { source: string; vari
 
   if (status === "success") {
     return variant === "brochure" ? (
-      <BrochureSuccess brochurePath={brochurePath} />
+      <BrochureSuccess />
     ) : (
       <ProfileStep token={token} downloadPath={downloadPath} />
     );
@@ -376,7 +389,7 @@ export function GuideForm({ source, variant = "review" }: { source: string; vari
       {status === "error" && <p className="text-sm text-red-600">{errorMessage}</p>}
 
       <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={status === "submitting"}>
-        {status === "submitting" ? "Sending…" : variant === "brochure" ? "Get the brochure" : "Claim my Opportunity Pass"}
+        {status === "submitting" ? "Sending…" : variant === "brochure" ? "Continue to payment" : "Claim my Opportunity Pass"}
       </Button>
 
       <p className="text-xs leading-relaxed text-text-tertiary">
