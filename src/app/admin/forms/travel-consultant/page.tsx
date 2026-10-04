@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-table";
 import { PaymentPill, ReviewPill } from "@/components/admin/consultant-pills";
+import { CopyButton } from "@/components/admin/copy-button";
 import { SavedBanner } from "@/components/admin/saved-banner";
 import { StatTile, StatTileGrid } from "@/components/admin/stat-tile";
 import { consultantsCsvUrl, listConsultants, updateConsultant } from "@/lib/admin/api/consultants";
@@ -132,8 +133,14 @@ export default function TravelConsultantFormPage() {
       header: "Name",
       cell: (c) => (
         <div>
-          <div>{c.fullName}</div>
-          <div className="text-xs font-normal text-text-tertiary">{c.email}</div>
+          <div className="flex items-center gap-1.5">
+            {c.fullName}
+            <CopyButton value={c.fullName} label="name" />
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-normal text-text-tertiary">
+            {c.email}
+            <CopyButton value={c.email} label="email" />
+          </div>
         </div>
       ),
     },
@@ -142,14 +149,17 @@ export default function TravelConsultantFormPage() {
       header: "WhatsApp",
       cell: (c) => (
         <div>
-          <a
-            href={`https://wa.me/${c.whatsapp.replace(/[^0-9]/g, "")}`}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="text-green-700 underline underline-offset-2"
-          >
-            {c.whatsapp}
-          </a>
+          <div className="flex items-center gap-1.5">
+            <a
+              href={`https://wa.me/${c.whatsapp.replace(/[^0-9]/g, "")}`}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="text-green-700 underline underline-offset-2"
+            >
+              {c.whatsapp}
+            </a>
+            <CopyButton value={c.whatsapp} label="phone number" />
+          </div>
           <div className="text-xs text-text-tertiary">{c.city}</div>
         </div>
       ),
