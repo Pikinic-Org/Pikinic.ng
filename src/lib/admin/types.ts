@@ -176,3 +176,39 @@ export type TravelConsultant = {
   adminNotes: string | null;
   createdAt: string;
 };
+
+export type JobStatus = "draft" | "published";
+
+export type Job = {
+  slug: string;
+  title: string;
+  category: string;
+  jobType: string;
+  location: string;
+  summary: string;
+  description: string;
+  responsibilities: string[];
+  qualifications: string[];
+  closesAt: string;
+  status: JobStatus;
+  // Only on the list response.
+  applicationCount?: number;
+};
+
+export type JobApplicationStatus = "new" | "shortlisted" | "interviewed" | "rejected" | "hired";
+
+export type JobApplication = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  address: string;
+  phone: string;
+  motivation: string | null;
+  cvFileName: string;
+  status: JobApplicationStatus;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  job: { title: string; slug: string; category: string };
+};

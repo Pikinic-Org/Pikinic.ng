@@ -7,6 +7,7 @@ type AdminIconKey =
   | "deal"
   | "package"
   | "webinar"
+  | "careers"
   | "booking"
   | "forms"
   | "media"
@@ -55,6 +56,13 @@ const paths: Record<AdminIconKey, ReactNode> = {
       <rect x="3" y="5" width="14" height="11" rx="1" />
       <path d="M17 9.5 21 7v9l-4-2.5" />
       <circle cx="10" cy="10.5" r="2.25" />
+    </>
+  ),
+  careers: (
+    <>
+      <rect x="3" y="7" width="18" height="13" rx="1.5" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+      <path d="M3 13h18" />
     </>
   ),
   booking: (

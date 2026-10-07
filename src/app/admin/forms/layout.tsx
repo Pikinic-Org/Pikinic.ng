@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 const tabs = [
   { href: "/admin/forms/growth-conference", label: "Growth Conference" },
   { href: "/admin/forms/travel-consultant", label: "Travel Consultant" },
+  { href: "/admin/forms/careers", label: "Careers" },
 ];
 
 export default function FormsLayout({ children }: { children: ReactNode }) {

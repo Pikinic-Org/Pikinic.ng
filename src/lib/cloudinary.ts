@@ -72,3 +72,35 @@ export function getGuideDownloadUrl(file: GuideFile = "guide", ttlSeconds = 300)
     expires_at: Math.floor(Date.now() / 1000) + ttlSeconds,
   });
 }
+
+// CVs from the careers form. Stored as *authenticated* raw files, so they have
+// no public URL: the dashboard opens one through a short-lived signed link.
+const CV_FOLDER = "pikinic-careers/cvs";
+
+export async function uploadCv(buffer: Buffer, extension: string): Promise<{ url: string; publicId: string }> {
+  ensureConfigured();
+  const result = await cloudinary.uploader.upload(`data:application/octet-stream;base64,${buffer.toString("base64")}`, {
+    folder: CV_FOLDER,
+    // Raw files keep their extension in the public id, so a download opens in the right app.
+    public_id: `${crypto.randomUUID()}.${extension}`,
+    resource_type: "raw",
+    type: "authenticated",
+  });
+  return { url: result.secure_url, publicId: result.public_id };
+}
+
+export async function destroyCv(publicId: string): Promise<void> {
+  ensureConfigured();
+  await cloudinary.uploader.destroy(publicId, { resource_type: "raw", type: "authenticated", invalidate: true });
+}
+
+/** A signed download link for a CV that stops working after `ttlSeconds`. */
+export function getCvDownloadUrl(publicId: string, ttlSeconds = 300): string {
+  ensureConfigured();
+  return cloudinary.utils.private_download_url(publicId, "", {
+    resource_type: "raw",
+    type: "authenticated",
+    attachment: true,
+    expires_at: Math.floor(Date.now() / 1000) + ttlSeconds,
+  });
+}

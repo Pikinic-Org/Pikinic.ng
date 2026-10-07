@@ -71,7 +71,8 @@ export function Navbar() {
         <div className="hidden flex-1 md:flex md:justify-center">
         <div className="flex items-center gap-2 rounded-xl border border-border-primary bg-neutral-900/[0.04] p-1.5">
           {navLinks.map((link) => {
-            const active = pathname === link.href;
+            // A section's own pages count too, so Careers stays highlighted on a job page.
+            const active = pathname === link.href || (link.href.length > 1 && pathname.startsWith(`${link.href}/`));
 
             if (link.label === "Services") {
               return (

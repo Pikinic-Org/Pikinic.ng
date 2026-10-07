@@ -204,3 +204,64 @@ model GuideLead {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 }
+
+enum JobStatus {
+  draft
+  published
+}
+
+enum JobApplicationStatus {
+  new
+  shortlisted
+  interviewed
+  rejected
+  hired
+}
+
+// Roles shown on /careers. Created and edited in the admin dashboard, so the
+// public pages read them from here rather than from code. `category` is one of
+// the options in src/lib/constants.ts (kept as text so adding a category needs
+// no migration). A job is open to applicants while it is published and
+// closesAt has not passed; after that its page says applications are closed.
+model Job {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  title            String
+  category         String
+  location         String
+  jobType          String
+  summary          String
+  description      String
+  responsibilities String[]
+  qualifications   String[]
+  closesAt         DateTime
+  status           JobStatus        @default(draft)
+  applications     JobApplication[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+// One row per person per job (email is stored lowercase). The CV file lives in
+// Cloudinary; cvPublicId is kept so the file can be removed with the row.
+model JobApplication {
+  id         String               @id @default(cuid())
+  jobId      String
+  job        Job                  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  firstName  String
+  lastName   String
+  email      String
+  address    String
+  phone      String
+  // Their answer to the question on the form ("Why are you a good fit for this role?").
+  motivation String?
+  cvUrl      String
+  cvFileName String
+  cvPublicId String
+  status     JobApplicationStatus @default(new)
+  adminNotes String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@unique([jobId, email])
+  @@index([jobId])
+}

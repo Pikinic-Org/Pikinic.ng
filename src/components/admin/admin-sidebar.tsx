@@ -13,6 +13,7 @@ const navItems = [
   { href: "/admin/deals", label: "Flight Deals", icon: "deal" as const },
   { href: "/admin/packages", label: "Travel Packages", icon: "package" as const },
   { href: "/admin/webinars", label: "Webinars", icon: "webinar" as const },
+  { href: "/admin/careers", label: "Careers", icon: "careers" as const },
   { href: "/admin/bookings", label: "Bookings", icon: "booking" as const },
   { href: "/admin/forms", label: "Forms", icon: "forms" as const },
   { href: "/admin/media", label: "Media", icon: "media" as const },

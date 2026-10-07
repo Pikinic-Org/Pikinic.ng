@@ -71,6 +71,7 @@ export const navLinks = [
   // whatWeOfferLinks below, each pointing at its own subdomain.
   { label: "Services", href: "#" },
   { label: "About", href: "/about" },
+  { label: "Careers", href: "/careers" },
   { label: "Contact Us", href: "/contact" },
 ];
 
@@ -194,7 +195,7 @@ export const footerColumns = [
     links: [
       { label: "Our story", href: "/about" },
       { label: "Team", href: "/about#team" },
-      { label: "Careers", href: "/about#careers" },
+      { label: "Careers", href: "/careers" },
     ],
   },
 ];
@@ -213,3 +214,10 @@ export const brochureOffer = {
   whatsapp: siteConfig.phones[0],
   bank: { bankName: "First Bank", accountNumber: "2047254048", accountName: "Pikinic Ng Limited" },
 };
+
+// Careers. Each job in the dashboard picks one category and one type from
+// these lists; the public /careers page builds its filter chips from them.
+// They are stored as plain text, so adding an option here needs no migration.
+export const jobCategories = ["Study Abroad", "Travel & Tours", "Stay & Ride", "Finance"] as const;
+export const jobTypes = ["Full-time", "Part-time", "Contract", "Internship"] as const;
+export const defaultJobLocation = "Ikeja, Lagos";
