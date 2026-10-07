@@ -10,6 +10,9 @@ import { listFlightOffers } from "@/lib/admin/api/flights";
 import { listPackages } from "@/lib/admin/api/packages";
 import { listWebinars } from "@/lib/admin/api/webinars";
 import { listConsultants } from "@/lib/admin/api/consultants";
+import { listJobApplications } from "@/lib/admin/api/job-applications";
+import { listJobs } from "@/lib/admin/api/jobs";
+import { getJobState } from "@/components/admin/job-state-pill";
 import { formatNaira } from "@/lib/admin/utils/format";
 import { getBookingMetrics } from "@/lib/admin/utils/metrics";
 
@@ -18,6 +21,7 @@ const quickLinks = [
   { href: "/admin/flights/new", label: "Add a Flight Offer" },
   { href: "/admin/packages/new", label: "Add a Travel Package" },
   { href: "/admin/webinars/new", label: "Create a Webinar" },
+  { href: "/admin/careers/new", label: "Add a Job" },
 ];
 
 export default function AdminOverviewPage() {
@@ -37,6 +41,26 @@ export default function AdminOverviewPage() {
     pending: number;
     revenue: number;
   } | null>(null);
+
+  const [careerStats, setCareerStats] = useState<{
+    openJobs: number;
+    applications: number;
+    newApplications: number;
+    shortlisted: number;
+  } | null>(null);
+
+  useEffect(() => {
+    Promise.allSettled([listJobs(), listJobApplications()]).then(([jobs, applications]) => {
+      const jobRows = jobs.status === "fulfilled" ? jobs.value : [];
+      const applicationRows = applications.status === "fulfilled" ? applications.value : [];
+      setCareerStats({
+        openJobs: jobRows.filter((job) => getJobState(job) === "open").length,
+        applications: applicationRows.length,
+        newApplications: applicationRows.filter((a) => a.status === "new").length,
+        shortlisted: applicationRows.filter((a) => a.status === "shortlisted").length,
+      });
+    });
+  }, []);
 
   useEffect(() => {
     listConsultants()
@@ -79,7 +103,7 @@ export default function AdminOverviewPage() {
         <StatTile label="Webinars" value={counts ? String(counts.webinars) : "…"} />
       </StatTileGrid>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+      <div className="mt-8 grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-[2px] border border-border-primary p-6">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">
             Bookings Snapshot
@@ -136,6 +160,42 @@ export default function AdminOverviewPage() {
           >
             View all registrations →
           </Link>
+        </div>
+
+        <div className="rounded-[2px] border border-border-primary p-6">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-text-tertiary">Careers</h2>
+          <div className="mt-4 space-y-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Open jobs</span>
+              <span className="font-semibold text-text-primary">{careerStats ? careerStats.openJobs : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Applications</span>
+              <span className="font-semibold text-text-primary">{careerStats ? careerStats.applications : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">New, not yet reviewed</span>
+              <span className="font-semibold text-text-primary">{careerStats ? careerStats.newApplications : "…"}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-text-secondary">Shortlisted</span>
+              <span className="font-semibold text-text-primary">{careerStats ? careerStats.shortlisted : "…"}</span>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+            <Link
+              href="/admin/forms/careers"
+              className="text-xs font-semibold uppercase tracking-widest text-green-700 hover:text-green-800"
+            >
+              View applications →
+            </Link>
+            <Link
+              href="/admin/careers"
+              className="text-xs font-semibold uppercase tracking-widest text-green-700 hover:text-green-800"
+            >
+              Manage jobs →
+            </Link>
+          </div>
         </div>
 
         <div className="rounded-[2px] border border-border-primary p-6">
