@@ -2,7 +2,8 @@ export const siteConfig = {
   name: "Pikinic",
   description:
     "Pikinic simplifies travel, study abroad, and settling in Lagos — one trusted ecosystem for the whole journey.",
-  url: "https://pikinic.ng",
+  // The www address is the canonical one: pikinic.ng redirects to it.
+  url: "https://www.pikinic.ng",
   founded: 2023,
   offices: "Lagos & Osun",
   email: "admin@pikinic.ng",
