@@ -1,14 +1,15 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FocusEvent, type FormEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type FocusEvent, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { AdminIcon } from "@/components/admin/admin-icon";
 import { AdminSelect, AdminTextInput, ImagePickerField, type FieldState } from "@/components/admin/fields";
 import { MediaPickerModal } from "@/components/admin/media-picker-modal";
 import { createBlogPost, updateBlogPost } from "@/lib/admin/api/blog";
 import { slugify } from "@/lib/admin/utils/slugify";
-import { parsePastedContent } from "@/lib/admin/utils/parse-pasted-content";
+import { htmlToDraft, parsePastedContent } from "@/lib/admin/utils/parse-pasted-content";
+import { BlogContent } from "@/components/blog/blog-content";
 import { formatAdminDate } from "@/lib/admin/utils/format";
 import type { BlogCategory, BlogContentBlock, BlogPost, BlogPostStatus } from "@/lib/admin/types";
 
@@ -26,6 +27,15 @@ function validate(data: Record<string, FormDataEntryValue>): FieldErrors {
   if (!String(data.readTime ?? "").trim()) errors.readTime = "Read time is required.";
   return errors;
 }
+
+const blockLabels: Record<BlogContentBlock["type"], string> = {
+  h1: "H1",
+  h2: "H2",
+  h3: "H3",
+  paragraph: "Paragraph",
+  list: "List",
+  image: "Image",
+};
 
 const headingStyles: Record<string, string> = {
   h1: "text-3xl",
@@ -80,7 +90,11 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
   function addBlock(type: BlogContentBlock["type"]) {
     const id = crypto.randomUUID();
     const block: BlogContentBlock =
-      type === "image" ? { id, type: "image", url: "", caption: "" } : { id, type, text: "" };
+      type === "image"
+        ? { id, type: "image", url: "", caption: "" }
+        : type === "list"
+          ? { id, type: "list", ordered: false, items: [""] }
+          : { id, type, text: "" };
     setBlocks((prev) => [...prev, block]);
     setContentError("");
   }
@@ -95,9 +109,31 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
     setBlocks((prev) => prev.filter((block) => block.id !== id));
   }
 
+  // Google Docs and Word put formatted HTML on the clipboard alongside plain
+  // text. Converting it here keeps headings, lists, bold and links, which the
+  // plain text drops.
+  function handlePaste(e: ClipboardEvent<HTMLTextAreaElement>) {
+    const html = e.clipboardData.getData("text/html");
+    if (!html) return;
+    const draft = htmlToDraft(html);
+    if (!draft) return;
+    e.preventDefault();
+    const { selectionStart, selectionEnd, value } = e.currentTarget;
+    setPasteText(value.slice(0, selectionStart) + draft + value.slice(selectionEnd));
+  }
+
   function addPastedBlocks() {
     const parsed = parsePastedContent(pasteText);
     if (parsed.length === 0) return;
+    // A draft that opens with an H1 is carrying its own title. Move it to the
+    // Title field instead of repeating it in the body.
+    const titleInput = formRef.current?.elements.namedItem("title");
+    const first = parsed[0];
+    if (first.type === "h1" && titleInput instanceof HTMLInputElement && !titleInput.value.trim()) {
+      titleInput.value = first.text;
+      setTitlePreview(first.text);
+      parsed.shift();
+    }
     setBlocks((prev) => [...prev, ...parsed]);
     setPasteText("");
     setPasteBoxOpen(false);
@@ -188,7 +224,7 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
         {mode === "edit" ? (
           <>
             <div className="mb-4 flex flex-wrap gap-2">
-              {(["h1", "h2", "h3", "paragraph", "image"] as const).map((type) => (
+              {(["h1", "h2", "h3", "paragraph", "list", "image"] as const).map((type) => (
                 <button
                   key={type}
                   type="button"
@@ -196,7 +232,7 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
                   className="flex items-center gap-1.5 rounded-[2px] border border-border-primary px-3 py-2 text-xs font-semibold uppercase tracking-widest text-text-primary transition-colors hover:bg-neutral-900/[0.04]"
                 >
                   <AdminIcon icon="plus" className="h-3.5 w-3.5" />
-                  {type === "paragraph" ? "Paragraph" : type.toUpperCase()}
+                  {blockLabels[type]}
                 </button>
               ))}
               <button
@@ -216,10 +252,11 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
                 <textarea
                   autoFocus
                   placeholder={
-                    "Paste a full draft here — blank lines split it into separate paragraphs.\n\nStart a line with #, ##, or ### to make it a heading instead of a paragraph."
+                    "Paste straight from Google Docs or Word: headings, bullet lists, bold and links carry over.\n\nPlain text works too. Each line becomes a paragraph, # / ## / ### makes a heading, and lines starting with - or 1. become a list."
                   }
                   rows={8}
                   value={pasteText}
+                  onPaste={handlePaste}
                   onChange={(e) => setPasteText(e.target.value)}
                   className="w-full rounded-[2px] border border-border-primary bg-surface-primary px-3 py-2 text-sm leading-relaxed text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
                 />
@@ -251,9 +288,25 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
                 {blocks.map((block, index) => (
                   <div key={block.id} className="group relative rounded-[2px] border border-border-primary p-4">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
-                        {block.type === "paragraph" ? "Paragraph" : block.type.toUpperCase()}
-                      </span>
+                      {block.type === "image" || block.type === "list" ? (
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-text-tertiary">
+                          {block.type === "list" ? (block.ordered ? "Numbered list" : "Bullet list") : blockLabels.image}
+                        </span>
+                      ) : (
+                        // Text blocks can switch type, e.g. a pasted line that should be a heading.
+                        <select
+                          aria-label="Block type"
+                          value={block.type}
+                          onChange={(e) => updateBlock(block.id, { type: e.target.value as "h1" | "h2" | "h3" | "paragraph" })}
+                          className="rounded-[2px] border border-transparent bg-transparent py-0.5 text-[10px] font-semibold uppercase tracking-widest text-text-tertiary hover:border-border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+                        >
+                          {(["h1", "h2", "h3", "paragraph"] as const).map((type) => (
+                            <option key={type} value={type}>
+                              {blockLabels[type]}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                       <div className="flex items-center gap-3">
                         <button
                           type="button"
@@ -311,9 +364,27 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
                           />
                         </div>
                       </div>
+                    ) : block.type === "list" ? (
+                      <div className="space-y-2">
+                        <textarea
+                          placeholder="One item per line"
+                          rows={Math.max(3, block.items.length)}
+                          value={block.items.join("\n")}
+                          onChange={(e) => updateBlock(block.id, { items: e.target.value.split("\n") })}
+                          className="w-full rounded-[2px] border border-border-primary bg-surface-primary px-3 py-2 text-sm leading-relaxed text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-700"
+                        />
+                        <label className="flex items-center gap-2 text-xs text-text-secondary">
+                          <input
+                            type="checkbox"
+                            checked={block.ordered}
+                            onChange={(e) => updateBlock(block.id, { ordered: e.target.checked })}
+                          />
+                          Numbered
+                        </label>
+                      </div>
                     ) : block.type === "paragraph" ? (
                       <textarea
-                        placeholder="Write a paragraph…"
+                        placeholder="Write a paragraph… **bold**, *italic* and [link text](https://…) work here."
                         rows={4}
                         value={block.text}
                         onChange={(e) => updateBlock(block.id, { text: e.target.value })}
@@ -355,35 +426,12 @@ export function BlogPostForm({ initialPost }: { initialPost?: BlogPost }) {
               {titlePreview || "Untitled post"}
             </h1>
             {excerptPreview && <p className="mt-3 text-lg text-text-secondary">{excerptPreview}</p>}
-            <div className="mt-8 space-y-5">
-              {blocks.length === 0 && <p className="text-sm text-text-tertiary">No content yet.</p>}
-              {blocks.map((block) => {
-                if (block.type === "image") {
-                  return (
-                    <figure key={block.id}>
-                      {block.url && (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={block.url} alt={block.caption ?? ""} className="w-full rounded-[2px] object-cover" />
-                      )}
-                      {block.caption && (
-                        <figcaption className="mt-2 text-xs text-text-tertiary">{block.caption}</figcaption>
-                      )}
-                    </figure>
-                  );
-                }
-                if (block.type === "paragraph") {
-                  return (
-                    <p key={block.id} className="text-base leading-relaxed text-text-primary">
-                      {block.text || "…"}
-                    </p>
-                  );
-                }
-                return (
-                  <p key={block.id} className={`font-bold tracking-tight text-text-primary ${headingStyles[block.type]}`}>
-                    {block.text || "…"}
-                  </p>
-                );
-              })}
+            <div className="mt-8">
+              {blocks.length === 0 ? (
+                <p className="text-sm text-text-tertiary">No content yet.</p>
+              ) : (
+                <BlogContent blocks={blocks} />
+              )}
             </div>
           </article>
         )}

@@ -16,6 +16,13 @@ const textBlockSchema = z.object({
   text: z.string(),
 });
 
+const listBlockSchema = z.object({
+  id: z.string().min(1),
+  type: z.literal("list"),
+  ordered: z.boolean(),
+  items: z.array(z.string()),
+});
+
 const imageBlockSchema = z.object({
   id: z.string().min(1),
   type: z.literal("image"),
@@ -23,7 +30,7 @@ const imageBlockSchema = z.object({
   caption: z.string().optional(),
 });
 
-export const blogContentBlockSchema = z.union([textBlockSchema, imageBlockSchema]);
+export const blogContentBlockSchema = z.union([textBlockSchema, listBlockSchema, imageBlockSchema]);
 
 export const blogPostInputSchema = z.object({
   slug: slugSchema,

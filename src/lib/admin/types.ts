@@ -11,8 +11,11 @@ export type BlogCategory =
   | "Money & Fares"
   | "Destination Guides";
 
+// Paragraph and list text can carry light inline formatting: **bold**,
+// *italic* and [link text](https://…). See src/components/blog/blog-content.tsx.
 export type BlogContentBlock =
   | { id: string; type: "h1" | "h2" | "h3" | "paragraph"; text: string }
+  | { id: string; type: "list"; ordered: boolean; items: string[] }
   | { id: string; type: "image"; url: string; caption?: string };
 
 export type BlogPostStatus = "draft" | "published";
