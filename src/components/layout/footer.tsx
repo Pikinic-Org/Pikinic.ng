@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Container } from "@/components/ui/container";
 import { NewsletterForm } from "@/components/ui/newsletter-form";
 import { SocialIcon } from "@/components/ui/social-icon";
-import { footerColumns, serviceSocialLinks, siteConfig, socialLinks } from "@/lib/constants";
+import { footerColumns, isWhatsappLink, serviceSocialLinks, siteConfig, socialLinks } from "@/lib/constants";
 
 export function Footer() {
   return (
@@ -65,6 +65,7 @@ export function Footer() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
+                        {...(isWhatsappLink(link.href) ? { target: "_blank", rel: "noreferrer noopener" } : {})}
                         className="text-sm text-neutral-200 transition-colors hover:text-neutral-0"
                       >
                         {link.label}
@@ -83,7 +84,7 @@ export function Footer() {
                 <div key={service.name} className="flex items-center justify-between gap-4 rounded-xl bg-neutral-0/5 p-4">
                   <span className="text-sm text-neutral-200">{service.name}</span>
                   <div className="flex gap-1">
-                    {service.links.map((social) => (
+                    {service.links.filter((social) => social.href !== "#").map((social) => (
                       <Link
                         key={social.label}
                         href={social.href}

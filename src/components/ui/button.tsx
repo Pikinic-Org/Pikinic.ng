@@ -1,6 +1,7 @@
 import { ButtonHTMLAttributes, forwardRef } from "react";
 import Link from "next/link";
 
+import { isWhatsappLink } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type ButtonVariant = "primary" | "secondary" | "inverse";
@@ -53,7 +54,12 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     if (href) {
       return (
-        <Link href={href} className={classes}>
+        <Link
+          href={href}
+          className={classes}
+          // WhatsApp opens in a new tab so the visitor keeps the site.
+          {...(isWhatsappLink(href) ? { target: "_blank", rel: "noreferrer noopener" } : {})}
+        >
           {children}
           {arrow && <Arrow />}
         </Link>

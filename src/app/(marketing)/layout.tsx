@@ -3,6 +3,7 @@ import { grift, nexa } from "@/app/fonts";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { CustomCursor } from "@/components/ui/custom-cursor";
+import { WhatsappChat } from "@/components/ui/whatsapp-chat";
 import { siteConfig } from "@/lib/constants";
 import "../globals.css";
 
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
+        <WhatsappChat />
       </body>
     </html>
   );

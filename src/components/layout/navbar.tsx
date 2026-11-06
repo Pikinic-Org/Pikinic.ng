@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { cn } from "@/lib/utils";
-import { navLinks, siteConfig, whatWeOfferLinks } from "@/lib/constants";
+import { isWhatsappLink, navLinks, siteConfig, whatWeOfferLinks } from "@/lib/constants";
 
 function Mark({ className }: { className?: string }) {
   return (
@@ -98,6 +98,7 @@ export function Navbar() {
                         <Link
                           key={item.label}
                           href={item.href}
+                          {...(isWhatsappLink(item.href) ? { target: "_blank", rel: "noreferrer noopener" } : {})}
                           className="block rounded-lg px-3 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-neutral-900/[0.06]"
                         >
                           {item.label}
@@ -210,6 +211,7 @@ export function Navbar() {
                     <Link
                       key={item.label}
                       href={item.href}
+                      {...(isWhatsappLink(item.href) ? { target: "_blank", rel: "noreferrer noopener" } : {})}
                       className={cn(
                         "text-base font-medium text-neutral-0/60",
                         open && "reveal"

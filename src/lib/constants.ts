@@ -17,6 +17,25 @@ export const directorContact = {
   email: "adeniyi@pikinic.ng",
 };
 
+// A wa.me link that opens a chat with the message already typed.
+export const whatsappLink = (phone: string, message?: string) =>
+  `https://wa.me/${phone.replace(/\D/g, "")}${message ? `?text=${encodeURIComponent(message)}` : ""}`;
+
+export const isWhatsappLink = (href: string) => href.startsWith("https://wa.me/");
+
+// The site-wide "Chat on WhatsApp" button goes to the office line (0805 530 8558).
+export const chatWhatsappHref = whatsappLink(siteConfig.phones[0], "Hi Pikinic, I'd like to make an enquiry.");
+
+// Finance and Stay and Ride have no website yet, so enquiries go to WhatsApp (0806 579 4790).
+export const financeHref = whatsappLink(
+  directorContact.whatsapp,
+  "Hi Pikinic, I'd like to make an enquiry about your finance services (proof of funds, school fees, visa fees or a study loan)."
+);
+export const stayAndRideHref = whatsappLink(
+  directorContact.whatsapp,
+  "Hi Pikinic, I'd like to make an enquiry about Stay and Ride (a short-stay apartment or a rental car)."
+);
+
 // Details from the "Travel Consultant 1" flyer in Figma. `code` is stored on
 // each sign-up so later cohorts can be told apart in the dashboard.
 export const consultantProgramme = {
@@ -34,24 +53,23 @@ export const consultantProgramme = {
 export const programmeLabel = (code: string | null) =>
   code === consultantProgramme.code ? consultantProgramme.label : code ?? "One-day, 10 Oct 2026 (Ikeja)";
 
-// Instagram is confirmed (@pikinic). X, TikTok, and LinkedIn are still
-// placeholder handles — swap for the real profiles before launch.
+// Instagram is confirmed (@pikinic). TikTok and LinkedIn are still placeholder
+// handles: swap for the real profiles. X was removed (user, 2026-11-06).
 export const socialLinks = [
   { label: "Instagram", href: "https://instagram.com/pikinic", icon: "instagram" },
-  { label: "X", href: "https://x.com/pikinic_ng", icon: "x" },
   { label: "TikTok", href: "https://tiktok.com/@pikinic.ng", icon: "tiktok" },
   { label: "LinkedIn", href: "https://linkedin.com/company/pikinic", icon: "linkedin" },
 ] as const;
 
-// TODO: swap "#" for the real profile URLs — Study Abroad and Travel & Tours
-// each run their own accounts, separate from the main Pikinic socials above.
+// Study Abroad and Travel & Tours run their own accounts, separate from the main Pikinic
+// socials above. A "#" link is hidden in the footer until the real profile is added.
 export const serviceSocialLinks = [
   {
     name: "Study Abroad",
     links: [
       { label: "Facebook", href: "#", icon: "facebook" },
-      { label: "Instagram", href: "#", icon: "instagram" },
-      { label: "TikTok", href: "#", icon: "tiktok" },
+      { label: "Instagram", href: "https://www.instagram.com/pikiniceduconsult/", icon: "instagram" },
+      { label: "TikTok", href: "https://www.tiktok.com/@pikiniceduconsult", icon: "tiktok" },
       { label: "LinkedIn", href: "#", icon: "linkedin" },
     ],
   },
@@ -59,7 +77,7 @@ export const serviceSocialLinks = [
     name: "Travel & Tours",
     links: [
       { label: "Facebook", href: "#", icon: "facebook" },
-      { label: "Instagram", href: "#", icon: "instagram" },
+      { label: "Instagram", href: "https://www.instagram.com/pikinictravels_ng/", icon: "instagram" },
       { label: "TikTok", href: "#", icon: "tiktok" },
       { label: "LinkedIn", href: "#", icon: "linkedin" },
     ],
@@ -79,8 +97,8 @@ export const navLinks = [
 export const whatWeOfferLinks = [
   { label: "Study Abroad", href: "https://studyabroad.pikinic.ng" },
   { label: "Travel & Tours", href: "https://travelsandtours.pikinic.ng" },
-  { label: "Stay & Ride", href: "https://stayandride.pikinic.ng" },
-  { label: "Finance", href: "https://firstmushrooom.com" },
+  { label: "Stay & Ride", href: stayAndRideHref },
+  { label: "Finance", href: financeHref },
   { label: "Book a Flight", href: "https://travelsandtours.pikinic.ng" },
 ];
 
@@ -122,7 +140,7 @@ export const services: Service[] = [
     description:
       "Short-stay apartments and rental cars for arrivals, business travellers, and anyone who needs a reliable base. Book where you stay and how you move in one place.",
     image: { src: "/images/stay-ride.jpg", alt: "Warmly styled living room" },
-    href: "https://stayandride.pikinic.ng",
+    href: stayAndRideHref,
     accent: "yellow",
   },
   {
@@ -132,7 +150,7 @@ export const services: Service[] = [
     description:
       "Proof of funds, school fee payments, visa fee payments, and study loan facilitation. We handle the financial complexity of moving abroad so you're not doing it alone.",
     image: { src: "/images/finance.png", alt: "Reviewing financial documents and a passport at a sunlit desk" },
-    href: "https://firstmushrooom.com",
+    href: financeHref,
     accent: "red",
   },
 ];
@@ -187,8 +205,8 @@ export const footerColumns = [
     links: [
       { label: "Study Abroad", href: "https://studyabroad.pikinic.ng" },
       { label: "Travel and tours", href: "https://travelsandtours.pikinic.ng" },
-      { label: "Stay and Ride", href: "https://stayandride.pikinic.ng" },
-      { label: "Finance", href: "https://firstmushrooom.com" },
+      { label: "Stay and Ride", href: stayAndRideHref },
+      { label: "Finance", href: financeHref },
     ],
   },
   {
