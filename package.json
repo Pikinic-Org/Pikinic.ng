@@ -7,6 +7,7 @@
     "build": "prisma generate && prisma generate --config=prisma.bookings.config.ts && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types --no-warnings --import ./tests/support/register.mjs --test \"tests/**/*.test.ts\"",
     "postinstall": "prisma generate && prisma generate --config=prisma.bookings.config.ts",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",

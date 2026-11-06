@@ -75,13 +75,17 @@ model FlightBooking {
   passengers Json
   travellers Json
 
-  // Payment (Monnify) — this row's own id is used as Monnify's paymentReference,
-  // so no separate field is needed for that; this is Monnify's own reference,
-  // needed to poll /status when a webhook can't reach us (e.g. local dev).
-  monnifyTransactionReference String?
+  // Payment (Bachs) — this row's own id is sent as the checkout's reference, so
+  // no separate field is needed for that. bachsCheckoutId is the checkout we
+  // created; confirmPaymentAndReserve reads it back from Bachs to check payment
+  // (never trusting the webhook or the return page alone). bachsChargeId is the
+  // charge under it (ch_…), stored once paid because refunds are made against it.
+  bachsCheckoutId String? @unique
+  bachsChargeId   String?
 
-  // Refund (Monnify) — set when a booking fails after payment already
-  // succeeded; this row's own id is reused as Monnify's refundReference too.
+  // Refund (Bachs) — set when a booking fails after payment already succeeded;
+  // this row's own id is reused as the refund's reference too. Bachs refund
+  // status: processing | success | failed.
   refundStatus String?
 
   createdAt DateTime @default(now())

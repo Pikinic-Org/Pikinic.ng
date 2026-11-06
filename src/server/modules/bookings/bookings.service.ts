@@ -1,5 +1,6 @@
 import { prismaBookings } from "@/lib/db-bookings";
-import { getTransactionStatus, initiatePayment, initiateRefund } from "@/server/modules/monnify/monnify.service";
+import { BachsError } from "@/server/modules/bachs/bachs.client";
+import { createCheckout, createRefund, getCheckout, isCheckoutPaid } from "@/server/modules/bachs/bachs.service";
 import { priceFlight, reserveFlight } from "@/server/modules/skylink/skylink.service";
 import { startCheckoutInputSchema } from "@/server/modules/bookings/bookings.schema";
 
@@ -41,7 +42,7 @@ export const listFlightBookings = async () => {
 };
 
 // Removes only this row from the flight-booking database. It does not cancel
-// a SkyLink reservation or refund a Monnify payment — it's for clearing
+// a SkyLink reservation or refund a Bachs payment — it's for clearing
 // test/junk records from the admin dashboard.
 export const deleteFlightBooking = async (id: string) => {
   await prismaBookings.flightBooking.delete({ where: { id } });
@@ -52,7 +53,7 @@ export const startCheckout = async (input: unknown) => {
 
   // data.verifiedPrice/customerPrice arrive from the client and are never
   // trusted for what actually gets charged or ticketed — a tampered request
-  // body could otherwise get Monnify to charge far less than the real fare,
+  // body could otherwise get Bachs to charge far less than the real fare,
   // and SkyLink would still issue the real ticket at reserve time. Re-derive
   // both from a fresh SkyLink quote against the booking_token instead, the
   // same opaque/unforgeable value confirmPaymentAndReserve re-prices with
@@ -89,22 +90,31 @@ export const startCheckout = async (input: unknown) => {
   const separator = data.redirectUrl.includes("?") ? "&" : "?";
   const redirectUrlWithBookingId = `${data.redirectUrl}${separator}bookingId=${booking.id}`;
 
-  const payment = await initiatePayment({
+  // The fare is always charged in naira (the product is NGN). A foreign card switches the
+  // checkout to USD and Bachs converts it, so other currencies are refused here rather than
+  // silently charged as if they were naira.
+  if (data.currency !== "NGN") {
+    throw new Error(`Bookings are charged in NGN; got ${data.currency}.`);
+  }
+
+  // Both addresses go back to the same page: it asks us to confirm, and an unpaid or abandoned
+  // checkout simply stays pending_payment.
+  const checkout = await createCheckout({
     amount: booking.customerPrice,
     customerName: `${primaryGuest.first_name} ${primaryGuest.last_name}`,
     customerEmail: primaryGuest.email,
-    paymentReference: booking.id,
-    redirectUrl: redirectUrlWithBookingId,
-    currencyCode: data.currency,
+    reference: booking.id,
+    successUrl: redirectUrlWithBookingId,
+    cancelUrl: redirectUrlWithBookingId,
   });
-  console.log(`[bookings] ${booking.id} — Monnify payment initiated, transactionReference=${payment.transactionReference}`);
+  console.log(`[bookings] ${booking.id} — Bachs checkout created, checkoutId=${checkout.checkout_id}`);
 
   await prismaBookings.flightBooking.update({
     where: { id: booking.id },
-    data: { monnifyTransactionReference: payment.transactionReference },
+    data: { bachsCheckoutId: checkout.checkout_id },
   });
 
-  return { bookingId: booking.id, checkoutUrl: payment.checkoutUrl };
+  return { bookingId: booking.id, checkoutUrl: checkout.checkout_url };
 };
 
 export const getBooking = async (id: string) => {
@@ -116,7 +126,7 @@ export const getBooking = async (id: string) => {
 // that died mid-reserve doesn't leave a paid booking stuck forever.
 const RESERVE_CLAIM_WINDOW_MS = 60_000;
 
-// The Monnify webhook and the customer's return page can both ask us to
+// The Bachs webhook and the customer's return page can both ask us to
 // reserve within the same second. SkyLink lets a booking token be used once, so
 // a second reserve would fail and — worse — send a successfully booked
 // customer down the "failed, refund" path. This claim is one atomic UPDATE:
@@ -135,10 +145,10 @@ const claimReservation = async (id: string, from: "pending_payment" | "paid"): P
   return claimed.count === 1;
 };
 
-// Called either by the Monnify webhook (production) or a manual poll (local
+// Called either by the Bachs webhook (production) or a manual poll (local
 // dev, or a belt-and-braces check right after the customer's browser returns
-// from Monnify's checkout) — either way, payment is re-verified against
-// Monnify's own API here, never trusted from the caller.
+// from Bachs' checkout) — either way, payment is re-verified against
+// Bachs' own API here, never trusted from the caller.
 export const confirmPaymentAndReserve = async (id: string) => {
   const booking = await prismaBookings.flightBooking.findUnique({ where: { id } });
   if (!booking) throw new Error("Booking not found");
@@ -151,14 +161,23 @@ export const confirmPaymentAndReserve = async (id: string) => {
   }
 
   if (booking.status === "pending_payment") {
-    if (!booking.monnifyTransactionReference) {
+    if (!booking.bachsCheckoutId) {
       throw new Error("No payment has been initiated for this booking");
     }
 
-    const payment = await getTransactionStatus(booking.monnifyTransactionReference);
-    console.log(`[bookings] ${id} — Monnify paymentStatus=${payment.paymentStatus}`);
-    if (payment.paymentStatus !== "PAID") {
+    const checkout = await getCheckout(booking.bachsCheckoutId);
+    console.log(`[bookings] ${id} — Bachs checkout status=${checkout.status}, charge status=${checkout.charge?.status ?? "none"}`);
+    if (!isCheckoutPaid(checkout) || !checkout.charge) {
       return booking;
+    }
+
+    // Kept for the refund below: Bachs refunds are made against the charge, not the checkout.
+    if (booking.bachsChargeId !== checkout.charge.payment_id) {
+      await prismaBookings.flightBooking.update({
+        where: { id },
+        data: { bachsChargeId: checkout.charge.payment_id },
+      });
+      booking.bachsChargeId = checkout.charge.payment_id;
     }
   }
 
@@ -228,22 +247,33 @@ export const confirmPaymentAndReserve = async (id: string) => {
     // confirming that) — the customer paid for a booking that didn't
     // complete, so refund automatically rather than leaving it to a manual
     // process.
-    if (booking.monnifyTransactionReference) {
+    // Full refund of the charge, in whatever currency the customer paid (naira, or USD for a
+    // foreign card). Bachs allows one refund per charge; the idempotency key is the booking id.
+    if (booking.bachsChargeId) {
       try {
-        const refund = await initiateRefund({
-          transactionReference: booking.monnifyTransactionReference,
-          refundReference: id,
-          refundAmount: booking.customerPrice,
-          refundReason: "SkyLink reservation failed after payment",
-          customerNote: "Booking failed",
+        const refund = await createRefund({
+          chargeId: booking.bachsChargeId,
+          reference: id,
+          reason: "SkyLink reservation failed after payment",
         });
-        console.log(`[bookings] ${id} — refund initiated, refundStatus=${refund.refundStatus}`);
+        console.log(`[bookings] ${id} — refund created, refundId=${refund.refund_id}, status=${refund.status}`);
         await prismaBookings.flightBooking.update({
           where: { id },
-          data: { refundStatus: refund.refundStatus },
+          data: { refundStatus: refund.status },
         });
       } catch (refundError) {
-        console.log(`[bookings] ${id} — refund initiation FAILED:`, refundError instanceof Error ? refundError.message : refundError);
+        // Seen in the sandbox: straight after a payment the money is still pending, and Bachs
+        // refuses with INSUFFICIENT_BALANCE. Mark the booking so the admin list shows the customer
+        // is owed a refund, instead of leaving refundStatus empty and the refund forgotten.
+        const code = refundError instanceof BachsError ? refundError.code : null;
+        console.log(
+          `[bookings] ${id} — refund could not be started${code ? ` (${code})` : ""}:`,
+          refundError instanceof Error ? refundError.message : refundError
+        );
+        await prismaBookings.flightBooking.update({
+          where: { id },
+          data: { refundStatus: "refund_not_started" },
+        });
       }
     }
 
@@ -251,8 +281,8 @@ export const confirmPaymentAndReserve = async (id: string) => {
   }
 };
 
-// Called from the Monnify webhook when a SUCCESSFUL_REFUND or FAILED_REFUND
-// event arrives — refundReference is this booking's own id (see startCheckout).
+// Called from the Bachs webhook when a refund finishes. refundReference is this
+// booking's own id (the reference sent with createRefund).
 export const recordRefundOutcome = async (refundReference: string, refundStatus: string) => {
   console.log(`[bookings] ${refundReference} — refund outcome: ${refundStatus}`);
   await prismaBookings.flightBooking.update({
