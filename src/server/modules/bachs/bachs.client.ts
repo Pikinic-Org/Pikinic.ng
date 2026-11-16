@@ -1,3 +1,4 @@
+import { createHmac, timingSafeEqual } from "crypto";
 import { requireEnv } from "@/lib/env";
 
 // Bachs authenticates every call with the secret key as a Bearer token, so unlike Monnify there is
@@ -70,4 +71,40 @@ export const bachsRequest = async <T>(path: string, { method = "GET", body, idem
   }
 
   return parsed as T;
+};
+
+// Bachs signs every webhook delivery. X-Bachs-Signature-V2 is "t=<unix seconds>,v1=<hex>", with more
+// than one v1 for the 24 hours after a secret rotation. Each v1 is the HMAC-SHA256 hex of
+// "<t>.<raw body>" with the endpoint's signing secret. Deliveries older (or newer) than this are
+// refused, so a captured request can't be replayed later.
+// Docs: https://docs.bachs.io/guides/webhooks/overview
+export const WEBHOOK_TOLERANCE_SECONDS = 300;
+
+export const verifyBachsWebhookSignature = (
+  rawBody: string,
+  signatureHeader: string | null,
+  secret: string,
+  nowSeconds = Math.floor(Date.now() / 1000)
+): boolean => {
+  if (!signatureHeader || !secret) return false;
+
+  let timestamp: string | null = null;
+  const signatures: string[] = [];
+  for (const part of signatureHeader.split(",")) {
+    const [key, value] = part.trim().split("=", 2);
+    if (key === "t") timestamp = value ?? null;
+    if (key === "v1" && value) signatures.push(value);
+  }
+
+  if (!timestamp || !/^\d+$/.test(timestamp) || signatures.length === 0) return false;
+  if (Math.abs(nowSeconds - Number(timestamp)) > WEBHOOK_TOLERANCE_SECONDS) return false;
+
+  const expected = createHmac("sha256", secret).update(`${timestamp}.${rawBody}`).digest();
+
+  return signatures.some((signature) => {
+    if (!/^[0-9a-f]+$/i.test(signature)) return false;
+    const received = Buffer.from(signature, "hex");
+    // timingSafeEqual throws on different lengths, so check that first.
+    return received.length === expected.length && timingSafeEqual(received, expected);
+  });
 };

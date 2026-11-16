@@ -67,3 +67,31 @@ export const refundSchema = z.object({
   reference: z.string().nullable().optional(),
   status: z.string(),
 });
+
+// Every webhook delivery: { id: "evt_…", type, created_at, organization_id, data }.
+// Docs: https://docs.bachs.io/guides/webhooks/overview
+export const webhookEventSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  created_at: z.string(),
+  data: z.unknown(),
+});
+
+// collection.succeeded. reference is the one we gave the checkout (the booking id). status is
+// uppercase here (SUCCEEDED, ACCEPTED, OVERPAID) and is not trusted: confirmPaymentAndReserve
+// asks Bachs for the checkout itself.
+export const collectionSucceededDataSchema = z.object({
+  checkout_id: z.string().nullable().optional(),
+  charge_id: z.string().nullable().optional(),
+  reference: z.string().nullable().optional(),
+  status: z.string(),
+});
+
+// refund.paid / refund.failed. reference is the one sent with createRefund (the booking id), and
+// Bachs says it is always present. status: processing | paid | failed.
+export const refundEventDataSchema = z.object({
+  refund_id: z.string(),
+  charge_id: z.string(),
+  reference: z.string(),
+  status: z.string(),
+});
