@@ -70,7 +70,7 @@ describe("createCheckout", () => {
       metadata: { booking_id: "booking_123" },
       success_url: checkoutInput.successUrl,
       cancel_url: checkoutInput.cancelUrl,
-      expires_in_minutes: 60,
+      expires_in_minutes: 15,
     });
 
     assert.equal(result.checkout_id, "chk_1");

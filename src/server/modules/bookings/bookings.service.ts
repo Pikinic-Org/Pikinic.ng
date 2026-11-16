@@ -4,6 +4,7 @@ import { createCheckout, createRefund, getCheckout, isCheckoutPaid } from "@/ser
 import { getTransactionStatus, initiatePayment, initiateRefund } from "@/server/modules/monnify/monnify.service";
 import { priceFlight, reserveFlight } from "@/server/modules/skylink/skylink.service";
 import { startCheckoutInputSchema } from "@/server/modules/bookings/bookings.schema";
+import { bachsCheckoutMismatch, isMonnifyPaid, monnifyPaymentMismatch } from "@/server/modules/bookings/payment-checks";
 
 type StoredPrimaryGuest = {
   first_name?: string;
@@ -53,6 +54,13 @@ export const deleteFlightBooking = async (id: string) => {
 export const startCheckout = async (input: unknown) => {
   const data = startCheckoutInputSchema.parse(input);
 
+  // The fare is always charged in naira, with either gateway. With Bachs a foreign card switches
+  // the checkout to USD and Bachs converts it, so other currencies are refused here (before any
+  // booking row is written) rather than silently charged as if they were naira.
+  if (data.currency !== "NGN") {
+    throw new Error(`Bookings are charged in NGN; got ${data.currency}.`);
+  }
+
   // data.verifiedPrice/customerPrice arrive from the client and are never
   // trusted for what actually gets charged or ticketed — a tampered request
   // body could otherwise get Bachs to charge far less than the real fare,
@@ -92,13 +100,6 @@ export const startCheckout = async (input: unknown) => {
   // page the customer lands back on knows which booking to check.
   const separator = data.redirectUrl.includes("?") ? "&" : "?";
   const redirectUrlWithBookingId = `${data.redirectUrl}${separator}bookingId=${booking.id}`;
-
-  // The fare is always charged in naira, with either gateway. With Bachs a foreign card switches
-  // the checkout to USD and Bachs converts it, so other currencies are refused here rather than
-  // silently charged as if they were naira.
-  if (data.currency !== "NGN") {
-    throw new Error(`Bookings are charged in NGN; got ${data.currency}.`);
-  }
 
   const customerName = `${primaryGuest.first_name} ${primaryGuest.last_name}`;
 
@@ -192,9 +193,18 @@ export const confirmPaymentAndReserve = async (id: string) => {
     }
 
     const payment = await getTransactionStatus(booking.monnifyTransactionReference);
-    console.log(`[bookings] ${id} — Monnify paymentStatus=${payment.paymentStatus}`);
-    if (payment.paymentStatus !== "PAID") {
+    console.log(
+      `[bookings] ${id} — Monnify paymentStatus=${payment.paymentStatus}, amountPaid=${payment.amountPaid} ${payment.currency}`
+    );
+    if (!isMonnifyPaid(payment.paymentStatus)) {
       return booking;
+    }
+
+    // Money was taken, but not for this booking's fare (a reference mix-up, or less than the fare).
+    // Never ticket on it: fail the booking and refund what was paid.
+    const mismatch = monnifyPaymentMismatch(payment, booking);
+    if (mismatch) {
+      return failAndRefund(booking, `Monnify payment does not match the booking (${mismatch})`);
     }
   } else if (booking.status === "pending_payment") {
     if (!booking.bachsCheckoutId) {
@@ -214,6 +224,11 @@ export const confirmPaymentAndReserve = async (id: string) => {
         data: { bachsChargeId: checkout.charge.payment_id },
       });
       booking.bachsChargeId = checkout.charge.payment_id;
+    }
+
+    const mismatch = bachsCheckoutMismatch(checkout, booking);
+    if (mismatch) {
+      return failAndRefund(booking, `Bachs checkout does not match the booking (${mismatch})`);
     }
   }
 
@@ -274,63 +289,129 @@ export const confirmPaymentAndReserve = async (id: string) => {
     });
   } catch (error) {
     console.log(`[bookings] ${id} — reserve failed:`, error instanceof Error ? error.message : error);
-    await prismaBookings.flightBooking.update({
-      where: { id },
-      data: { status: "failed" },
-    });
-
-    // Payment already succeeded (we only ever reach this point after
-    // confirming that) — the customer paid for a booking that didn't
-    // complete, so refund automatically rather than leaving it to a manual
-    // process.
-    const refundable =
-      booking.paymentProvider === "monnify" ? booking.monnifyTransactionReference : booking.bachsChargeId;
-    if (refundable) {
-      try {
-        const refundStatus = await startRefund(booking.paymentProvider, refundable, id, booking.customerPrice);
-        // Only if nothing is recorded yet: the refund-finished webhook can arrive before this line
-        // runs, and the first "in progress" status must not overwrite that final outcome.
-        await prismaBookings.flightBooking.updateMany({
-          where: { id, refundStatus: null },
-          data: { refundStatus },
-        });
-      } catch (refundError) {
-        // Seen in the Bachs sandbox: straight after a payment the money is still pending, and Bachs
-        // refuses with INSUFFICIENT_BALANCE. Mark the booking so the admin list shows the customer
-        // is owed a refund, instead of leaving refundStatus empty and the refund forgotten.
-        const code = refundError instanceof BachsError ? refundError.code : null;
-        console.log(
-          `[bookings] ${id} — refund could not be started${code ? ` (${code})` : ""}:`,
-          refundError instanceof Error ? refundError.message : refundError
-        );
-        await prismaBookings.flightBooking.update({
-          where: { id },
-          data: { refundStatus: "refund_not_started" },
-        });
-      }
-    }
-
+    // Payment already succeeded (we only ever reach this point after confirming that): the
+    // customer paid for a booking that didn't complete, so refund automatically.
+    await failAndRefund(booking, "SkyLink reservation failed after payment");
     throw error;
   }
+};
+
+type BookingRow = NonNullable<Awaited<ReturnType<typeof getBooking>>>;
+
+// Refund statuses that mean the customer is still owed their money and nothing is under way:
+// the gateway refused to start the refund, or the refund itself failed.
+export const REFUND_RETRYABLE_STATUSES = ["refund_not_started", "failed", "FAILED"];
+
+// Marks a paid booking failed and refunds the payment. The status change is one atomic UPDATE from
+// pending_payment/paid, so when the webhook and the return page race, only one of them refunds.
+const failAndRefund = async (booking: BookingRow, reason: string): Promise<BookingRow> => {
+  const claimed = await prismaBookings.flightBooking.updateMany({
+    where: { id: booking.id, status: { in: ["pending_payment", "paid"] } },
+    data: { status: "failed" },
+  });
+  if (claimed.count === 1) {
+    console.log(`[bookings] ${booking.id} — marked failed: ${reason}`);
+    await refundBooking(booking);
+  }
+  return (await prismaBookings.flightBooking.findUnique({ where: { id: booking.id } })) ?? booking;
+};
+
+// Starts a full refund and records its first status. When the gateway refuses (seen in the Bachs
+// sandbox: straight after a payment the money is still pending, INSUFFICIENT_BALANCE), the booking is
+// marked refund_not_started so the admin list shows the customer is owed a refund and an admin can
+// retry it (retryRefund below). isRetry gives Bachs a fresh idempotency key, since Bachs would
+// otherwise replay the first, refused attempt.
+const refundBooking = async (booking: BookingRow, isRetry = false): Promise<string> => {
+  const { id } = booking;
+  const paymentId = booking.paymentProvider === "monnify" ? booking.monnifyTransactionReference : booking.bachsChargeId;
+  if (!paymentId) {
+    console.log(`[bookings] ${id} — no ${booking.paymentProvider} payment id stored, so no refund can be started`);
+    await prismaBookings.flightBooking.update({ where: { id }, data: { refundStatus: "refund_not_started" } });
+    return "refund_not_started";
+  }
+
+  try {
+    const refundStatus = await startRefund(booking.paymentProvider, paymentId, id, booking.customerPrice, isRetry);
+    // On the first attempt, only if nothing is recorded yet: the refund-finished webhook can arrive
+    // before this line runs, and the first "in progress" status must not overwrite that outcome.
+    // A retry replaces the earlier refund_not_started / failed.
+    await prismaBookings.flightBooking.updateMany({
+      where: isRetry ? { id, refundStatus: { in: REFUND_RETRYABLE_STATUSES } } : { id, refundStatus: null },
+      data: { refundStatus },
+    });
+    return refundStatus;
+  } catch (refundError) {
+    const code = refundError instanceof BachsError ? refundError.code : null;
+    console.log(
+      `[bookings] ${id} — refund could not be started${code ? ` (${code})` : ""}:`,
+      refundError instanceof Error ? refundError.message : refundError
+    );
+    await prismaBookings.flightBooking.update({ where: { id }, data: { refundStatus: "refund_not_started" } });
+    if (isRetry) throw refundError;
+    return "refund_not_started";
+  }
+};
+
+// Admin action: try again to refund a failed booking whose refund never started or failed.
+export const retryRefund = async (id: string) => {
+  const booking = await prismaBookings.flightBooking.findUnique({ where: { id } });
+  if (!booking) throw new Error("Booking not found");
+  if (booking.status !== "failed" || !booking.refundStatus || !REFUND_RETRYABLE_STATUSES.includes(booking.refundStatus)) {
+    throw new Error("Only a failed booking whose refund did not start, or failed, can be refunded again.");
+  }
+
+  console.log(`[bookings] ${id} — admin retrying refund (was ${booking.refundStatus})`);
+  await refundBooking(booking, true);
+  return prismaBookings.flightBooking.findUniqueOrThrow({ where: { id } });
+};
+
+// Scheduled job (GET /api/cron/retry-refunds): tries once more every refund that never started, so a
+// gateway outage at refund time doesn't leave a customer waiting on an admin. Only refund_not_started:
+// a refund the gateway took and then reported failed needs a person to look at it (the admin button).
+// Bookings older than REFUND_AUTO_RETRY_DAYS are left to the admin so a hopeless one isn't retried forever.
+const REFUND_AUTO_RETRY_DAYS = 14;
+const REFUND_AUTO_RETRY_BATCH = 20;
+
+export const retryOwedRefunds = async () => {
+  const since = new Date(Date.now() - REFUND_AUTO_RETRY_DAYS * 24 * 60 * 60 * 1000);
+  const owed = await prismaBookings.flightBooking.findMany({
+    where: { status: "failed", refundStatus: "refund_not_started", createdAt: { gte: since } },
+    orderBy: { createdAt: "asc" },
+    take: REFUND_AUTO_RETRY_BATCH,
+  });
+
+  const results: { id: string; refundStatus: string }[] = [];
+  for (const booking of owed) {
+    try {
+      results.push({ id: booking.id, refundStatus: await refundBooking(booking, true) });
+    } catch {
+      // refundBooking already logged it and left refund_not_started; the next run tries again.
+      results.push({ id: booking.id, refundStatus: "refund_not_started" });
+    }
+  }
+  console.log(`[bookings] refund retry run — ${owed.length} owed, ${results.filter((r) => r.refundStatus !== "refund_not_started").length} started`);
+  return results;
 };
 
 // Full refund through whichever gateway took the payment, with the booking id as the refund's
 // reference. Returns the refund's first status.
 //  - Bachs: against the charge id, in whatever currency the customer paid (naira, or USD for a
-//    foreign card). One refund per charge; the idempotency key is the booking id.
-//  - Monnify: against the transactionReference, for the naira amount charged.
+//    foreign card). One refund per charge, so a retry with a new idempotency key can't refund twice.
+//  - Monnify: against the transactionReference, for the naira amount charged. The refundReference
+//    must be unique, so a retry after a refund Monnify really created is refused rather than doubled.
 const startRefund = async (
   provider: string,
   paymentId: string,
   bookingId: string,
-  amount: number
+  amount: number,
+  isRetry: boolean
 ): Promise<string> => {
   if (provider === "monnify") {
     const refund = await initiateRefund({
       transactionReference: paymentId,
       refundReference: bookingId,
       refundAmount: amount,
-      refundReason: "SkyLink reservation failed after payment",
+      refundReason: "Flight booking could not be completed",
       customerNote: "Booking failed",
     });
     console.log(`[bookings] ${bookingId} — Monnify refund initiated, refundStatus=${refund.refundStatus}`);
@@ -340,7 +421,8 @@ const startRefund = async (
   const refund = await createRefund({
     chargeId: paymentId,
     reference: bookingId,
-    reason: "SkyLink reservation failed after payment",
+    reason: "Flight booking could not be completed",
+    ...(isRetry ? { idempotencyKey: `refund-${bookingId}-retry-${Date.now()}` } : {}),
   });
   console.log(`[bookings] ${bookingId} — Bachs refund created, refundId=${refund.refund_id}, status=${refund.status}`);
   return refund.status;
@@ -348,10 +430,13 @@ const startRefund = async (
 
 // Called from the Bachs or Monnify webhook when a refund finishes. refundReference
 // is this booking's own id (the reference sent when the refund was started).
-export const recordRefundOutcome = async (refundReference: string, refundStatus: string) => {
+// Returns false when no booking has that id (a refund that isn't a flight booking's), so the
+// webhook can acknowledge it instead of failing and being retried forever.
+export const recordRefundOutcome = async (refundReference: string, refundStatus: string): Promise<boolean> => {
   console.log(`[bookings] ${refundReference} — refund outcome: ${refundStatus}`);
-  await prismaBookings.flightBooking.update({
+  const updated = await prismaBookings.flightBooking.updateMany({
     where: { id: refundReference },
     data: { refundStatus },
   });
+  return updated.count === 1;
 };

@@ -15,9 +15,11 @@ import {
 // Bachs has no USSD for NGN.
 const PAYMENT_METHODS = ["NGN_CARD", "NGN_BANK_TRANSFER", "USD_CARD"];
 
-// Bachs checkouts expire after 60 minutes by default. Matches roughly how long a SkyLink fare
-// quote is worth holding; confirmPaymentAndReserve re-prices before ticketing anyway.
-const CHECKOUT_EXPIRES_IN_MINUTES = 60;
+// Bachs checkouts last 60 minutes unless told otherwise (allowed: 1 to 1440). A SkyLink fare
+// holds for about 10-15 minutes, so a payment made long after the quote mostly ends in a failed
+// reservation and a refund. 15 minutes leaves time for a bank transfer while keeping most payments
+// inside the fare's life; confirmPaymentAndReserve re-prices before ticketing anyway.
+const CHECKOUT_EXPIRES_IN_MINUTES = 15;
 
 // Bachs only charges against a catalogue product, so there is one "Flight booking" product priced
 // in NGN (BACHS_FLIGHT_PRODUCT_ID), and each checkout overrides its price with this booking's fare.
@@ -70,7 +72,7 @@ export const createRefund = async (input: unknown) => {
 
   const body = await bachsRequest("/v1/refunds", {
     method: "POST",
-    idempotencyKey: `refund-${data.reference}`,
+    idempotencyKey: data.idempotencyKey ?? `refund-${data.reference}`,
     body: {
       charge_id: data.chargeId,
       reference: data.reference,

@@ -3,5 +3,10 @@ import type { FlightBookingRow } from "@/lib/admin/types";
 
 export const listFlightBookings = () => apiFetch<FlightBookingRow[]>("/api/admin/bookings");
 
+export const retryFlightBookingRefund = (id: string) =>
+  apiFetch<{ refundStatus: string | null }>(`/api/admin/bookings/${encodeURIComponent(id)}/refund`, {
+    method: "POST",
+  });
+
 export const deleteFlightBooking = (id: string) =>
   apiFetch<{ ok: true }>(`/api/admin/bookings/${encodeURIComponent(id)}`, { method: "DELETE" });

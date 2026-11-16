@@ -48,11 +48,9 @@ export const webhook = async (request: Request) => {
       await handlePayment(data.reference);
     } else if (event.type === "refund.paid" || event.type === "refund.failed") {
       const data = refundEventDataSchema.parse(event.data);
-      if (!(await getBooking(data.reference))) {
+      if (!(await recordRefundOutcome(data.reference, data.status))) {
         console.log(`[bachs] refund ${data.refund_id} references unknown booking ${data.reference}. Ignored.`);
-        return ok({ received: true });
       }
-      await recordRefundOutcome(data.reference, data.status);
     }
     // Anything else we're subscribed to (collection.failed, checkout.expired) needs no action:
     // the booking just stays pending_payment.

@@ -6,7 +6,7 @@ import { AdminTable, type AdminTableColumn } from "@/components/admin/admin-tabl
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
 import { FlightBookingPill } from "@/components/admin/flight-booking-pill";
 import { StatTile, StatTileGrid } from "@/components/admin/stat-tile";
-import { deleteFlightBooking, listFlightBookings } from "@/lib/admin/api/bookings";
+import { deleteFlightBooking, listFlightBookings, retryFlightBookingRefund } from "@/lib/admin/api/bookings";
 import { formatAdminDate, formatAdminDateTime, formatNaira } from "@/lib/admin/utils/format";
 import type { FlightBookingRow, FlightBookingStatus } from "@/lib/admin/types";
 
@@ -21,6 +21,12 @@ const filters: { key: Filter; label: string }[] = [
 ];
 
 const isPaid = (booking: FlightBookingRow) => booking.status === "paid" || booking.status === "reserved";
+
+// Same list as REFUND_RETRYABLE_STATUSES in bookings.service.ts: the customer is owed a refund and
+// nothing is under way, so the admin can start it again.
+const REFUND_RETRYABLE_STATUSES = ["refund_not_started", "failed", "FAILED"];
+const canRetryRefund = (booking: FlightBookingRow) =>
+  booking.status === "failed" && !!booking.refundStatus && REFUND_RETRYABLE_STATUSES.includes(booking.refundStatus);
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<FlightBookingRow[] | null>(null);
@@ -43,6 +49,21 @@ export default function BookingsPage() {
     }
   };
 
+  const [retrying, setRetrying] = useState<string | null>(null);
+
+  const handleRetryRefund = async (id: string) => {
+    setError("");
+    setRetrying(id);
+    try {
+      const { refundStatus } = await retryFlightBookingRefund(id);
+      setBookings((current) => (current ? current.map((b) => (b.id === id ? { ...b, refundStatus } : b)) : current));
+    } catch (err) {
+      setError(err instanceof Error ? `Refund not started: ${err.message}` : "Could not start the refund.");
+    } finally {
+      setRetrying(null);
+    }
+  };
+
   const metrics = useMemo(() => {
     const all = bookings ?? [];
     const paid = all.filter(isPaid);
@@ -55,7 +76,8 @@ export default function BookingsPage() {
       paidNotReserved: count("paid"),
       awaitingPayment: count("pending_payment"),
       failed: count("failed"),
-      refunded: all.filter((b) => b.refundStatus).length,
+      refunded: all.filter((b) => b.refundStatus && !canRetryRefund(b)).length,
+      refundOwed: all.filter(canRetryRefund).length,
     };
   }, [bookings]);
 
@@ -112,6 +134,16 @@ export default function BookingsPage() {
           {booking.refundStatus && (
             <div className="mt-1 text-xs text-text-tertiary">Refund: {booking.refundStatus}</div>
           )}
+          {canRetryRefund(booking) && (
+            <button
+              type="button"
+              onClick={() => handleRetryRefund(booking.id)}
+              disabled={retrying === booking.id}
+              className="mt-1 text-xs font-semibold text-green-700 underline underline-offset-2 hover:text-green-900 disabled:opacity-50"
+            >
+              {retrying === booking.id ? "Starting refund…" : "Retry refund"}
+            </button>
+          )}
         </div>
       ),
     },
@@ -150,7 +182,10 @@ export default function BookingsPage() {
           <StatTile label="Successful" value={bookings ? String(metrics.successful) : "…"} />
           <StatTile label="Paid · Not Reserved" value={bookings ? String(metrics.paidNotReserved) : "…"} />
           <StatTile label="Failed" value={bookings ? String(metrics.failed) : "…"} />
-          <StatTile label="Refunds Started" value={bookings ? String(metrics.refunded) : "…"} />
+          <StatTile
+            label="Refunds Started / Owed"
+            value={bookings ? `${metrics.refunded} / ${metrics.refundOwed}` : "…"}
+          />
         </StatTileGrid>
       </div>
 

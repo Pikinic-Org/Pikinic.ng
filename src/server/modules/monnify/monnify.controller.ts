@@ -8,7 +8,7 @@ import {
   refundEventDataSchema,
   successfulTransactionEventDataSchema,
 } from "@/server/modules/monnify/monnify.schema";
-import { confirmPaymentAndReserve, recordRefundOutcome } from "@/server/modules/bookings/bookings.service";
+import { confirmPaymentAndReserve, getBooking, recordRefundOutcome } from "@/server/modules/bookings/bookings.service";
 import {
   CONSULTANT_PAYMENT_PREFIX,
   confirmPaymentByReference as confirmConsultantPaymentByReference,
@@ -61,26 +61,52 @@ export const webhook = async (request: Request) => {
 
     if (event.eventType === "SUCCESSFUL_TRANSACTION") {
       const data = successfulTransactionEventDataSchema.parse(event.eventData);
-      try {
-        if (data.paymentReference.startsWith(CONSULTANT_PAYMENT_PREFIX)) {
+      if (data.paymentReference.startsWith(CONSULTANT_PAYMENT_PREFIX)) {
+        try {
           await confirmConsultantPaymentByReference(data.paymentReference, data.transactionReference);
-        } else {
-          await confirmPaymentAndReserve(data.paymentReference);
+        } catch (error) {
+          console.error("Consultant payment confirmation failed after payment webhook:", error);
         }
-      } catch (error) {
-        // Already recorded as a failed booking (and refunded) inside
-        // confirmPaymentAndReserve — acknowledge the webhook regardless so
-        // Monnify doesn't retry a payment that was, in fact, received.
-        console.error("Booking confirmation failed after payment webhook:", error);
+      } else {
+        await handleFlightPayment(data.paymentReference);
       }
     } else if (event.eventType === "SUCCESSFUL_REFUND" || event.eventType === "FAILED_REFUND") {
       const data = refundEventDataSchema.parse(event.eventData);
-      await recordRefundOutcome(data.refundReference, data.refundStatus);
+      if (!(await recordRefundOutcome(data.refundReference, data.refundStatus))) {
+        console.log(`[monnify] refund ${data.refundReference} is not a flight booking. Ignored.`);
+      }
     }
 
     return ok({ received: true });
   } catch (error) {
     if (error instanceof ZodError) return fail(error.issues[0]?.message ?? "Invalid payload.", 400);
+    // A 500 makes Monnify send the notification again, which is what we want for a database or
+    // network hiccup.
     return failFromError(error, "Could not process webhook.");
+  }
+};
+
+// Same rules as the Bachs webhook. The notification only says "go and look":
+// confirmPaymentAndReserve asks Monnify for the transaction itself and trusts that.
+const handleFlightPayment = async (bookingId: string) => {
+  const booking = await getBooking(bookingId);
+  if (!booking) {
+    console.log(`[monnify] payment for unknown booking ${bookingId}. Ignored.`);
+    return;
+  }
+
+  try {
+    await confirmPaymentAndReserve(bookingId);
+  } catch (error) {
+    // If SkyLink refused the booking, confirmPaymentAndReserve has already marked it failed and
+    // started the refund, so the notification is acknowledged. If the booking is still
+    // pending_payment, the failure came before that (the database, or Monnify's own API), so the
+    // error goes up and the 500 brings a retry.
+    const after = await getBooking(bookingId);
+    if (after?.status === "failed" || after?.status === "reserved") {
+      console.error(`[monnify] ${bookingId} could not be reserved after payment (refund handled):`, error);
+      return;
+    }
+    throw error;
   }
 };

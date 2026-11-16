@@ -56,6 +56,9 @@ export const createRefundInputSchema = z.object({
   // Our reference for the refund (the booking id). Bachs allows one refund per charge.
   reference: z.string().min(1).max(128),
   reason: z.string().min(1).max(500),
+  // Defaults to refund-<reference>. A retry after Bachs refused the first attempt needs a new key,
+  // or Bachs replays the refusal. Safe, because Bachs allows only one refund per charge.
+  idempotencyKey: z.string().min(1).max(255).optional(),
 });
 
 export type CreateRefundInput = z.infer<typeof createRefundInputSchema>;

@@ -7,6 +7,8 @@ import {
   deleteFlightBooking,
   getBooking,
   listFlightBookings,
+  retryOwedRefunds,
+  retryRefund,
   startCheckout,
 } from "@/server/modules/bookings/bookings.service";
 
@@ -36,6 +38,34 @@ export const removeAdmin = async (_request: Request, { params }: { params: Promi
     return ok({ ok: true });
   } catch (error) {
     return failFromError(error, "Could not delete flight booking.");
+  }
+};
+
+// POST /api/admin/bookings/[id]/refund — starts the refund again for a failed booking whose
+// refund the gateway refused (refund_not_started) or that failed.
+export const retryRefundAdmin = async (_request: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const session = await requireAdminSession();
+  if (!session) return fail("Unauthorized.", 401);
+
+  try {
+    const { id } = await params;
+    const booking = await retryRefund(id);
+    return ok({ refundStatus: booking.refundStatus });
+  } catch (error) {
+    return failFromError(error, "Could not start the refund.");
+  }
+};
+
+// GET /api/cron/retry-refunds — run daily by Vercel Cron (vercel.json), which sends
+// "Authorization: Bearer $CRON_SECRET". Retries refunds the gateway refused to start.
+export const retryOwedRefundsCron = async (request: Request) => {
+  const [cronSecret] = requireEnv("CRON_SECRET");
+  if (request.headers.get("authorization") !== `Bearer ${cronSecret}`) return fail("Unauthorized.", 401);
+
+  try {
+    return ok({ retried: await retryOwedRefunds() });
+  } catch (error) {
+    return failFromError(error, "Could not retry refunds.");
   }
 };
 
