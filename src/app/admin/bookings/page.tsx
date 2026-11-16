@@ -91,7 +91,18 @@ export default function BookingsPage() {
         </div>
       ),
     },
-    { key: "amount", header: "Amount", cell: (booking) => formatNaira(booking.amount) },
+    {
+      key: "amount",
+      header: "Amount",
+      cell: (booking) => (
+        <div>
+          <div>{formatNaira(booking.amount)}</div>
+          <div className="text-xs text-text-tertiary">
+            {booking.paymentProvider === "monnify" ? "Monnify" : "Bachs"}
+          </div>
+        </div>
+      ),
+    },
     {
       key: "status",
       header: "Status",

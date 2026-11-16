@@ -75,6 +75,10 @@ model FlightBooking {
   passengers Json
   travellers Json
 
+  // Which gateway the customer chose at checkout: "bachs" or "monnify". Every
+  // later step (checking payment, refunding) goes to the same one.
+  paymentProvider String @default("bachs")
+
   // Payment (Bachs) — this row's own id is sent as the checkout's reference, so
   // no separate field is needed for that. bachsCheckoutId is the checkout we
   // created; confirmPaymentAndReserve reads it back from Bachs to check payment
@@ -83,9 +87,14 @@ model FlightBooking {
   bachsCheckoutId String? @unique
   bachsChargeId   String?
 
-  // Refund (Bachs) — set when a booking fails after payment already succeeded;
-  // this row's own id is reused as the refund's reference too. Bachs refund
-  // status: processing | success | failed.
+  // Payment (Monnify) — this row's own id is Monnify's paymentReference. This is
+  // Monnify's own transactionReference, needed to check status and to refund.
+  monnifyTransactionReference String? @unique
+
+  // Refund — set when a booking fails after payment already succeeded; this
+  // row's own id is reused as the refund's reference with either gateway.
+  // Bachs: processing | paid | failed. Monnify: PENDING | COMPLETED | FAILED.
+  // refund_not_started: the gateway refused to start it (see bookings.service).
   refundStatus String?
 
   createdAt DateTime @default(now())

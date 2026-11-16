@@ -153,6 +153,7 @@ export type FlightBookingRow = {
   currency: string;
   pnr: string | null;
   refundStatus: string | null;
+  paymentProvider: string;
   createdAt: string;
 };
 
